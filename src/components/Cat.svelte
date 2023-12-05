@@ -4,6 +4,13 @@
 
 	$: imgSrc = { url: '', title: '', sub: '', permalink: '' };
 
+	$: tooLong = false;
+	onMount(() => {
+		setTimeout(() => {
+			tooLong = true;
+		}, 2500);
+	});
+
 	async function getCat() {
 		const subs = [
 			'Catswithjobs',
@@ -11,7 +18,8 @@
 			'catpictures',
 			'catsinboxes',
 			'CatsInBusinessAttire',
-			'CatsInHats'
+			'CatsInHats',
+			'funnycats'
 		];
 		const sub = subs[Math.floor(Math.random() * subs.length)];
 		const base = 'https://www.reddit.com/r/' + sub + '/random.json';
@@ -40,15 +48,22 @@
 </script>
 
 <div class="CatBox" style="background-image: url({imgSrc.url})">
-	<BlurredSpinner zIndex={-1} />
-	<div class="CatBox__details">
-		<h4>
-			<a href="https://reddit.com{imgSrc.permalink}" target="_blank">
-				r/{imgSrc.sub}
-			</a>
-		</h4>
-		<h2 title={imgSrc.title}>{imgSrc.title}</h2>
-	</div>
+	<BlurredSpinner zIndex={-2} />
+	{#if tooLong}
+		<h2 class="CatBox--tooLong">
+			<em>Can't find a free cat, refresh the page!</em>
+		</h2>
+	{/if}
+	{#if imgSrc.url}
+		<div class="CatBox__details">
+			<h4>
+				<a href="https://reddit.com{imgSrc.permalink}" target="_blank">
+					r/{imgSrc.sub}
+				</a>
+			</h4>
+			<h2 title={imgSrc.title}>{imgSrc.title}</h2>
+		</div>
+	{/if}
 </div>
 
 <style lang="scss">
@@ -61,6 +76,10 @@
 		background-position: center;
 		@include make-flex($just: flex-end);
 		box-shadow: 0 0 20px 1px #00000087;
+
+		&--tooLong {
+			z-index: -1;
+		}
 
 		&:hover {
 			.CatBox__details {

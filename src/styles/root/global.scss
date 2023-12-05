@@ -41,7 +41,11 @@ html {
 
 body,
 #app {
-	@include box(100vw, auto);
+	@include box(100vw, 100vh);
+}
+
+#app{
+	@include make-flex();
 }
 
 body {
