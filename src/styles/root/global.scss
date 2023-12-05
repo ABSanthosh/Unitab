@@ -6,8 +6,7 @@ $scrollbarWidth: 8px;
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
-	color: #111111;
-
+	font-family: 'Roboto', sans-serif;
 	transition: color 0.1s ease-in-out;
 }
 
@@ -43,6 +42,13 @@ html {
 body,
 #app {
 	@include box(100vw, auto);
+}
+
+body {
+	background-image: url('/assets/Ventura-dark.jpg');
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-position: center;
 }
 
 // global needs
