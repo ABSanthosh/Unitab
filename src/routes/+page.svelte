@@ -1,13 +1,11 @@
 <script lang="ts">
 	import Cat from '../components/Cat.svelte';
 	import Sidebar from '../components/Sidebar.svelte';
-
-
 </script>
 
 <main class="Home">
-	<Sidebar />
-	<!-- <Cat />   -->
+	<Sidebar />                                                             
+	<Cat />
 </main>
 
 <style lang="scss">
