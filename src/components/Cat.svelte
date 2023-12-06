@@ -48,12 +48,13 @@
 </script>
 
 <div class="CatBox" style="background-image: url({imgSrc.url})">
-	<BlurredSpinner zIndex={-2} />
-	{#if tooLong}
-		<h2 class="CatBox--tooLong">
-			<em>Can't find a free cat, refresh the page!</em>
-		</h2>
-	{/if}
+	<BlurredSpinner zIndex={-2}>
+		{#if tooLong}
+			<h3 class="CatBox--tooLong">
+				<em>Can't find a free cat, refresh the page!</em>
+			</h3>
+		{/if}
+	</BlurredSpinner>
 	{#if imgSrc.url}
 		<div class="CatBox__details">
 			<h4>
@@ -72,13 +73,15 @@
 		position: relative;
 		border-radius: 20px;
 		background-size: cover;
-		@include box(400px, 400px);
+		@include box(315px, 315px);
 		background-position: center;
 		@include make-flex($just: flex-end);
 		box-shadow: 0 0 20px 1px #00000087;
 
 		&--tooLong {
 			z-index: -1;
+			padding: 0 20px;
+			text-align: center;
 		}
 
 		&:hover {

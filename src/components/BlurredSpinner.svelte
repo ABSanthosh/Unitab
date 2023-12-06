@@ -6,12 +6,14 @@
 
 <div class="BlurredSpinner" style="z-index: {zIndex}">
 	<Spinner />
+	<slot/>
 </div>
 
 <style lang="scss">
 	.BlurredSpinner {
 		top: 0;
 		left: 0;
+		gap: 8px;
 		@include box();
 		position: absolute;
 		@include make-flex();

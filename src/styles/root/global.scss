@@ -1,6 +1,7 @@
 @import './fonts.scss';
+@import '../Fancy/FancyDetails.scss';
 
-$scrollbarWidth: 8px;
+$scrollbarWidth: 4px;
 
 * {
 	margin: 0;
@@ -44,8 +45,9 @@ body,
 	@include box(100vw, 100vh);
 }
 
-#app{
+#app {
 	@include make-flex();
+	padding: 20px;
 }
 
 body {
