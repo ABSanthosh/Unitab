@@ -1,5 +1,6 @@
 <script lang="ts">
-	$: isClosed = false;
+	import options from '$lib/OptionStore';
+
 	$: tabGroups = [
 		{
 			title: 'Maker space',
@@ -14,128 +15,63 @@
 					favicon: 'https://www.google.com/favicon.ico',
 					title: 'Google',
 					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
-				},
-				{
-					favicon: 'https://www.google.com/favicon.ico',
-					title: 'Google',
-					url: 'https://www.google.com'
 				}
 			]
 		}
 	];
+
+	$: isClosed = $options.sidebarIsClosed;
 </script>
 
 <aside class="Sidebar" class:closed={isClosed}>
 	<button
 		class="Sidebar__close"
-		class:closed={isClosed}
+		class:closed={!isClosed}
 		data-icon={String.fromCodePoint(60099)}
-		on:click={() => (isClosed = !isClosed)}
+		on:click={() => {
+			// isClosed = !isClosed;
+			options.set({
+				...$options,
+				sidebarIsClosed: !isClosed
+			});
+		}}
 	/>
 	<h2>Spaces</h2>
-	<div class="Sidebar__groups">
-		{#each tabGroups as group}
-			<details
-				class="FancyDetails"
-				open={group.isOpen}
-				on:toggle={() => (group.isOpen = !group.isOpen)}
-			>
-				<summary>{group.title}</summary>
-				<ul>
-					{#each group.links as link}
-						<li>
-							<button
-								class="FancyDetails__icon"
-								data-icon={String.fromCodePoint(58829)}
-								style="--favicon: url({link.favicon});"
-								on:click={() => {
-									group.links = group.links.filter((l) => l !== link);
-								}}
-							/>
-							<a href={link.url} target="_blank" rel="noopener noreferrer">
-								{link.title}
-							</a>
-						</li>
-					{/each}
-				</ul>
-			</details>
-		{/each}
-	</div>
+	{#if tabGroups.length <= 0}
+		<em>No spaces yet</em>
+	{:else}
+		<div class="Sidebar__groups">
+			{#each tabGroups as group}
+				<details
+					class="FancyDetails"
+					open={group.isOpen}
+					on:toggle={() => (group.isOpen = !group.isOpen)}
+				>
+					<summary>{group.title}</summary>
+					<ul>
+						{#each group.links as link}
+							<li>
+								<button
+									class="FancyDetails__icon"
+									data-icon={String.fromCodePoint(58829)}
+									style="--favicon: url({link.favicon});"
+									on:click={() => {
+										group.links = group.links.filter((l) => l !== link);
+										if (group.links.length === 0) {
+											tabGroups = tabGroups.filter((g) => g !== group);
+										}
+									}}
+								/>
+								<a href={link.url} target="_blank" rel="noopener noreferrer">
+									{link.title}
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</details>
+			{/each}
+		</div>
+	{/if}
 </aside>
 
 <style lang="scss">
@@ -144,16 +80,27 @@
 		padding: 20px;
 		color: white;
 		position: relative;
-		@include box(345px);
-		border-radius: 17px;
+		@include box(315px);
+		z-index: 1;
 		border: 1px solid #999;
+		border-radius: 17px;
 		backdrop-filter: blur(16px);
 		background: rgba(0, 0, 0, 0.3);
 		@include make-flex($just: flex-start);
-		transition: transform 0.3s ease;
+		margin-left: -315px;
+		flex-shrink: 0;
+		transition: margin 0.3s ease;
 
 		&.closed {
-			transform: translateX(-100%);
+			margin-left: 0;
+		}
+
+		& > em {
+			@include box(100%, auto);
+			border-radius: 9px;
+			padding: 20px;
+			text-align: center;
+			border: 1px dashed #999;
 		}
 
 		&__close {
@@ -174,7 +121,7 @@
 			}
 
 			&.closed {
-				transform: translateX(60px);
+				transform: translateX(30px);
 				&::before {
 					transform: rotate(180deg);
 				}
@@ -188,21 +135,11 @@
 		}
 
 		&__groups {
-      margin-top: 20px;
+			margin-top: 20px;
 			@include make-flex($just: flex-start);
-			// @include box(calc(100% + 40px), auto);
 			@include box(100%, auto);
 			gap: 10px;
-			overflow-y: auto;  
-			// scrollbar-gutter: stable;
-			// padding-right: 28px;
-			// margin-left: 18px;
-			// padding-left: 7px;
-
-			// direction: rtl;
-			// & > * {
-			// 	direction: ltr;
-			// }
+			overflow-y: auto;
 		}
 	}
 </style>
