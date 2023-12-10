@@ -29,7 +29,6 @@
 		class:closed={!isClosed}
 		data-icon={String.fromCodePoint(60099)}
 		on:click={() => {
-			// isClosed = !isClosed;
 			options.set({
 				...$options,
 				sidebarIsClosed: !isClosed

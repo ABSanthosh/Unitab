@@ -47,8 +47,7 @@
 	});
 </script>
 
-<div class="CatBox">
-	<!-- style="background-image: url({imgSrc.url})" -->
+<div class="CatBox" style="background-image: url({imgSrc.url})">
 	<BlurredSpinner zIndex={-2}>
 		{#if tooLong}
 			<h3 class="CatBox--tooLong">
@@ -70,11 +69,12 @@
 
 <style lang="scss">
 	.CatBox {
-		flex-shrink: 0;
+		// flex-shrink: 0;
 		color: #e4e4e4;
 		position: relative;
 		background-size: cover;
-		@include box(315px, 315px);
+		@include box(315px, 100%);
+		max-height: 315px;
 		background-position: center;
 		@include make-flex($just: flex-end);
 		border-radius: 20px;

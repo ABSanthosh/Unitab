@@ -4,6 +4,7 @@
 
 	import Cat from '../components/Cat.svelte';
 	import Sidebar from '../components/Sidebar.svelte';
+	import FlipClock from '../components/Clocks/FlipClock.svelte';
 	// import Grid from 'svelte-grid';
 	// import gridHelp from 'svelte-grid/build/helper/index.mjs';
 
@@ -13,6 +14,7 @@
 <main class="Home" style="grid-template-columns: {isClosed ? '315px 1fr' : '0fr 1fr'};">
 	<Sidebar />
 	<div class="Home__tiles">
+		<FlipClock />
 		<AnalogClock />
 		<!-- <Cat /> -->
 	</div>
@@ -38,7 +40,6 @@
 			// grid-template-columns: repeat(auto-fill, 315px);
 			// justify-content: end;
 			// grid-auto-rows: 315px;
-
 		}
 		transition: 500ms;
 	}
