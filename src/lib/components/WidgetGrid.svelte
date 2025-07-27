@@ -133,7 +133,7 @@
     width: var(--cell-size);
     height: var(--cell-size);
     border: 1px dashed rgba(255, 255, 255, 0.3);
-    border-radius: 12px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
