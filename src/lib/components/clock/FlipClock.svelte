@@ -4,12 +4,14 @@
   // Ref: https://github.com/ronanru/svelte-flip-clock/blob/main/src/lib/FlipClock.svelte
   // Insp: https://gridfiti.com/wp-content/uploads/2021/08/Gridfiti_Blog_BestiPadWidgets_Clock.jpg
   import { onMount, onDestroy } from "svelte";
+  import { draggable, type DraggableOptions } from "../../actions/draggable";
 
   interface Props {
     gridRow?: number;
     gridCol?: number;
     gridSpanX?: number;
     gridSpanY?: number;
+    draggable?: boolean;
   }
 
   let {
@@ -17,12 +19,26 @@
     gridCol = 1,
     gridSpanX = 2,
     gridSpanY = 1,
+    draggable: isDraggable = true,
   }: Props = $props();
 
   let time = $state(new Date());
   let clockContainer: HTMLDivElement;
   let containerWidth = $state(240);
   let interval: NodeJS.Timeout;
+
+  // Current position state
+  let currentGridRow = $state(gridRow);
+  let currentGridCol = $state(gridCol);
+
+  // Draggable options
+  const draggableOptions: DraggableOptions = {
+    disabled: !isDraggable,
+    onDragEnd: (row, col) => {
+      currentGridRow = row;
+      currentGridCol = col;
+    }
+  };
 
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const months = [
@@ -142,9 +158,10 @@
 
 <div
   bind:this={clockContainer}
-  class="FlipClock BlurBG"
+  class="FlipClock BlurBG draggable-widget"
+  use:draggable={draggableOptions}
   style="
-		grid-area: {gridRow} / {gridCol} / {gridRow + gridSpanY} / {gridCol +
+		grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow + gridSpanY} / {currentGridCol +
     gridSpanX};
 		--container-width: {containerWidth}px;
 		--base-size: {containerWidth * 0.06}px;

@@ -74,6 +74,27 @@
       gap: gridGap
     };
   }
+
+  // Expose grid container for draggable action
+  export function getGridContainer() {
+    return gridContainer;
+  }
+
+  // Expose grid element specifically
+  export function getGridElement() {
+    return gridContainer?.querySelector('.widget-grid') as HTMLElement;
+  }
+
+  // Expose current grid values for draggable action
+  export function getCurrentGridInfo() {
+    return {
+      cols: gridCols,
+      rows: gridRows,
+      cellSize,
+      gap: gridGap,
+      gridElement: getGridElement()
+    };
+  }
 </script>
 
 <div class="widget-container" bind:this={gridContainer}>
@@ -127,6 +148,9 @@
     gap: var(--grid-gap);
     place-content: center;
     position: relative;
+    
+    /* Ensure proper stacking context for dragged elements */
+    z-index: 1;
   }
 
   .grid-cell {

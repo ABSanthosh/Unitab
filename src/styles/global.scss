@@ -73,3 +73,36 @@ body {
 	background: rgba(0, 0, 0, 0.49);
 	box-shadow: 0 0 20px 1px #00000087;
 }
+
+// Drag and drop styles
+.drag-placeholder {
+	position: fixed !important;
+	background: rgba(255, 255, 255, 0.1) !important;
+	border: 2px dashed rgba(255, 255, 255, 0.4) !important;
+	border-radius: 20px !important;
+	pointer-events: none !important;
+	z-index: 1000 !important;
+	backdrop-filter: blur(10px) !important;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	opacity: 0 !important;
+	transform: scale(0.95) !important;
+}
+
+// Smooth transitions for draggable elements
+.draggable-widget {
+	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	
+	&:hover {
+		cursor: grab;
+	}
+	
+	&:active {
+		cursor: grabbing;
+	}
+}
+
+// Prevent text selection during drag
+body.dragging {
+	user-select: none !important;
+	cursor: grabbing !important;
+}

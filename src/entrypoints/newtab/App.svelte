@@ -4,6 +4,7 @@
   import settingStore from "../../lib/stores/settingStore";
   import WidgetGrid from "../../lib/components/WidgetGrid.svelte";
   import FlipClock from "../../lib/components/clock/FlipClock.svelte";
+  import TestWidget from "../../lib/components/widgets/TestWidget.svelte";
 
   let widgetGrid: WidgetGrid;
 
@@ -33,5 +34,37 @@
     gridCol={1}
     gridSpanX={2}
     gridSpanY={1}
+    draggable={true}
+  />
+  
+  <!-- Test widgets to demonstrate dragging -->
+  <TestWidget 
+    gridRow={1}
+    gridCol={4}
+    gridSpanX={1}
+    gridSpanY={1}
+    draggable={true}
+    title="Widget A"
+    color="#f59e0b"
+  />
+  
+  <TestWidget 
+    gridRow={2}
+    gridCol={2}
+    gridSpanX={1}
+    gridSpanY={1}
+    draggable={true}
+    title="Widget B"
+    color="#10b981"
+  />
+  
+  <TestWidget 
+    gridRow={3}
+    gridCol={1}
+    gridSpanX={2}
+    gridSpanY={1}
+    draggable={true}
+    title="Wide Widget"
+    color="#8b5cf6"
   />
 </WidgetGrid>
