@@ -8,6 +8,11 @@ export default defineConfig({
   modules: ["@wxt-dev/module-svelte"],
   vite: () => ({
     css: {
+      preprocessorOptions: {
+        scss: {
+          // additionalData: `@use "src/styles/mixins.scss" as *;`,
+        },
+      },
       postcss: {
         plugins: [autoprefixer()],
       },
