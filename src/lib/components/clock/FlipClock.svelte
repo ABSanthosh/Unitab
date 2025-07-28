@@ -5,6 +5,7 @@
   // Insp: https://gridfiti.com/wp-content/uploads/2021/08/Gridfiti_Blog_BestiPadWidgets_Clock.jpg
   import { onMount, onDestroy } from "svelte";
   import { draggable, type DraggableOptions } from "../../actions/draggable";
+  import { resizable, type ResizableOptions } from "../../actions/resizable";
 
   interface Props {
     gridRow?: number;
@@ -12,6 +13,7 @@
     gridSpanX?: number;
     gridSpanY?: number;
     draggable?: boolean;
+    resizable?: boolean;
   }
 
   let {
@@ -20,6 +22,7 @@
     gridSpanX = 2,
     gridSpanY = 1,
     draggable: isDraggable = true,
+    resizable: isResizable = true,
   }: Props = $props();
 
   let time = $state(new Date());
@@ -27,9 +30,11 @@
   let containerWidth = $state(240);
   let interval: NodeJS.Timeout;
 
-  // Current position state
+  // Current position and size state
   let currentGridRow = $state(gridRow);
   let currentGridCol = $state(gridCol);
+  let currentSpanX = $state(gridSpanX);
+  let currentSpanY = $state(gridSpanY);
 
   // Draggable options
   const draggableOptions: DraggableOptions = {
@@ -37,7 +42,17 @@
     onDragEnd: (row, col) => {
       currentGridRow = row;
       currentGridCol = col;
-    }
+    },
+  };
+
+  // Resizable options
+  const resizableOptions: ResizableOptions = {
+    disabled: !isResizable,
+    allowedSizes: ["2x1", "2x2"],
+    onResize: (spanX, spanY) => {
+      currentSpanX = spanX;
+      currentSpanY = spanY;
+    },
   };
 
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -160,9 +175,10 @@
   bind:this={clockContainer}
   class="FlipClock BlurBG draggable-widget"
   use:draggable={draggableOptions}
+  use:resizable={resizableOptions}
   style="
-		grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow + gridSpanY} / {currentGridCol +
-    gridSpanX};
+		grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow +
+    currentSpanY} / {currentGridCol + currentSpanX};
 		--container-width: {containerWidth}px;
 		--base-size: {containerWidth * 0.06}px;
 		--segment-size: {containerWidth * 0.16}px;

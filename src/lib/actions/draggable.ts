@@ -292,6 +292,12 @@ export function draggable(element: HTMLElement, options: DraggableOptions = {}) 
   function handleMouseDown(e: MouseEvent) {
     if (options.disabled || e.button !== 0) return;
     
+    // Check if the event is coming from a resize indicator
+    const target = e.target as HTMLElement;
+    if (target.closest('.resize-indicator')) {
+      return; // Let the resize action handle this
+    }
+    
     e.preventDefault();
     isDragging = true;
     

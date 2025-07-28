@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { draggable, type DraggableOptions } from "../../actions/draggable";
+  import { resizable, type ResizableOptions } from "../../actions/resizable";
 
   interface Props {
     gridRow?: number;
@@ -9,6 +10,8 @@
     gridSpanX?: number;
     gridSpanY?: number;
     draggable?: boolean;
+    resizable?: boolean;
+    allowedSizes?: string[];
     title?: string;
     color?: string;
   }
@@ -19,13 +22,17 @@
     gridSpanX = 1,
     gridSpanY = 1,
     draggable: isDraggable = true,
+    resizable: isResizable = true,
+    allowedSizes = ["1x1", "2x2", "3x3", "2x1", "1x2"],
     title = "Widget",
     color = "#6366f1"
   }: Props = $props();
 
-  // Current position state
+  // Current position and size state
   let currentGridRow = $state(gridRow);
   let currentGridCol = $state(gridCol);
+  let currentSpanX = $state(gridSpanX);
+  let currentSpanY = $state(gridSpanY);
 
   // Draggable options
   const draggableOptions: DraggableOptions = {
@@ -35,20 +42,31 @@
       currentGridCol = col;
     }
   };
+
+  // Resizable options
+  const resizableOptions: ResizableOptions = {
+    disabled: !isResizable,
+    allowedSizes,
+    onResize: (spanX, spanY) => {
+      currentSpanX = spanX;
+      currentSpanY = spanY;
+    }
+  };
 </script>
 
 <div
   class="test-widget BlurBG draggable-widget"
   use:draggable={draggableOptions}
+  use:resizable={resizableOptions}
   style="
-    grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow + gridSpanY} / {currentGridCol + gridSpanX};
+    grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow + currentSpanY} / {currentGridCol + currentSpanX};
     --widget-color: {color};
   "
 >
   <div class="widget-content">
     <h3>{title}</h3>
     <p>Position: {currentGridRow}, {currentGridCol}</p>
-    <p>Size: {gridSpanX} × {gridSpanY}</p>
+    <p>Size: {currentSpanX} × {currentSpanY}</p>
   </div>
 </div>
 

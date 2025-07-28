@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { draggable, type DraggableOptions } from "../../actions/draggable";
+  import { resizable, type ResizableOptions } from "../../actions/resizable";
 
   let time = $state(new Date());
 
@@ -10,6 +11,7 @@
     gridSpanX?: number;
     gridSpanY?: number;
     draggable?: boolean;
+    resizable?: boolean;
     id: string;
   }
 
@@ -20,16 +22,26 @@
     gridSpanX = 2,
     gridSpanY = 2,
     draggable: isDraggable = true,
+    resizable: isResizable = true,
   }: Props = $props();
 
-  // Current position state
+  // Current position and size state
   let currentGridRow = $state(gridRow);
   let currentGridCol = $state(gridCol);
+  let currentSpanX = $state(gridSpanX);
+  let currentSpanY = $state(gridSpanY);
 
   // Draggable options
   const draggableOptions = {
     disabled: !isDraggable,
     onDragEnd: handleDragEnd,
+  };
+
+  // Resizable options
+  const resizableOptions = {
+    disabled: !isResizable,
+    allowedSizes: ["1x1", "2x2"],
+    onResize: handleResize,
   };
 
   let hours = $derived(time.getHours());
@@ -40,6 +52,12 @@
   function handleDragEnd(newRow: number, newCol: number) {
     currentGridRow = newRow;
     currentGridCol = newCol;
+  }
+
+  // Handle resize to update size
+  function handleResize(newSpanX: number, newSpanY: number) {
+    currentSpanX = newSpanX;
+    currentSpanY = newSpanY;
   }
 
   onMount(() => {
@@ -53,12 +71,14 @@
   });
 </script>
 
-<div 
-  class="AnalogClock BlurBG draggable-widget" 
+<div
+  class="AnalogClock BlurBG draggable-widget"
   use:draggable={draggableOptions}
+  use:resizable={resizableOptions}
   {id}
   style="
-    grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow + gridSpanY} / {currentGridCol + gridSpanX};
+    grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow +
+    currentSpanY} / {currentGridCol + currentSpanX};
   "
 >
   <svg viewBox="-50 -50 100 100">
@@ -70,19 +90,21 @@
         y2="45"
         transform="rotate({30 * minute})"
       />
-      <text
-        x={34 * Math.sin((Math.PI / 30) * minute)}
-        y={-34 * Math.cos((Math.PI / 30) * minute) + 2}
-        fill="black"
-        font-size="6px"
-        text-anchor="middle"
-      >
-        {#if minute == 0}
-          12
-        {:else}
-          {minute / 5}
-        {/if}
-      </text>
+      {#if !(currentSpanX === 1 && currentSpanY === 1)}
+        <text
+          x={34 * Math.sin((Math.PI / 30) * minute)}
+          y={-34 * Math.cos((Math.PI / 30) * minute) + 2}
+          fill="black"
+          font-size="6px"
+          text-anchor="middle"
+        >
+          {#if minute == 0}
+            12
+          {:else}
+            {minute / 5}
+          {/if}
+        </text>
+      {/if}
 
       {#each [1, 2, 3, 4] as offset}
         <line
@@ -120,7 +142,7 @@
 </div>
 
 <style lang="scss">
-	@use "../../../styles/mixins.scss" as *;
+  @use "../../../styles/mixins.scss" as *;
 
   .AnalogClock {
     // Ensure component fits within grid system
@@ -133,7 +155,7 @@
     @include make-flex();
     padding: 8px;
     box-sizing: border-box;
-    
+
     // Ensure proper positioning within grid
     position: relative;
     overflow: hidden;
@@ -153,12 +175,12 @@
       max-width: 100%;
       max-height: 100%;
       aspect-ratio: 1;
-      
+
       & > circle {
         fill: #fff;
       }
     }
-    
+
     &__face {
       fill: white;
     }
@@ -168,12 +190,12 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
-    
+
     &__major {
       stroke: #333;
       stroke-width: 1;
     }
-    
+
     text {
       font-family: "Lora", serif;
       font-size: clamp(4px, 1.2vw, 6px);
@@ -238,11 +260,11 @@
       &__minute--line {
         stroke-width: 3;
       }
-      
+
       &__major {
         stroke-width: 0.8;
       }
-      
+
       &__minor {
         stroke-width: 0.4;
       }
@@ -253,15 +275,15 @@
       &__minute--line {
         stroke-width: 2.5;
       }
-      
+
       &__major {
         stroke-width: 0.6;
       }
-      
+
       &__minor {
         stroke-width: 0.3;
       }
-      
+
       &__second--line {
         stroke-width: 0.8;
       }

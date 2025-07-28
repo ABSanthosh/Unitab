@@ -36,24 +36,28 @@
     gridSpanX={2}
     gridSpanY={1}
     draggable={true}
+    resizable={true}
   />
 
   <AnalogClock
     gridRow={1}
     gridCol={3}
-    gridSpanX={3}
-    gridSpanY={3}
+    gridSpanX={2}
+    gridSpanY={2}
     draggable={true}
+    resizable={true}
     id="analog-clock"
   />
 
-  <!-- Test widgets to demonstrate dragging -->
+  <!-- Test widgets to demonstrate dragging and resizing -->
   <TestWidget
     gridRow={1}
-    gridCol={4}
+    gridCol={5}
     gridSpanX={1}
     gridSpanY={1}
     draggable={true}
+    resizable={true}
+    allowedSizes={["1x1", "2x2", "3x3", "2x1", "1x2"]}
     title="Widget A"
     color="#f59e0b"
   />
@@ -64,6 +68,8 @@
     gridSpanX={1}
     gridSpanY={1}
     draggable={true}
+    resizable={true}
+    allowedSizes={["1x1", "2x2", "3x3", "2x1", "1x2"]}
     title="Widget B"
     color="#10b981"
   />
@@ -74,6 +80,8 @@
     gridSpanX={2}
     gridSpanY={1}
     draggable={true}
+    resizable={true}
+    allowedSizes={["1x1", "2x2", "3x3", "2x1", "1x2", "3x1"]}
     title="Wide Widget"
     color="#8b5cf6"
   />
