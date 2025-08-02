@@ -6,6 +6,7 @@
   import FlipClock from "../../lib/components/clock/FlipClock.svelte";
   import TestWidget from "../../lib/components/widgets/TestWidget.svelte";
   import AnalogClock from "@/lib/components/clock/AnalogClock.svelte";
+  import Calendar from "../../lib/components/widgets/Calendar.svelte";
 
   let widgetGrid: WidgetGrid;
 
@@ -20,6 +21,9 @@
   settingStore.subscribe((value) => {
     document.body.style.backgroundImage = `url(${value.options.wallpaper})`;
   });
+
+  const drag = $state(false);
+  const resize = $state(false);
 </script>
 
 <WidgetGrid
@@ -35,8 +39,8 @@
     gridCol={1}
     gridSpanX={2}
     gridSpanY={1}
-    draggable={true}
-    resizable={true}
+    draggable={drag}
+    resizable={resize}
   />
 
   <AnalogClock
@@ -44,8 +48,8 @@
     gridCol={3}
     gridSpanX={2}
     gridSpanY={2}
-    draggable={true}
-    resizable={true}
+    draggable={drag}
+    resizable={resize}
     id="analog-clock"
   />
 
@@ -55,8 +59,8 @@
     gridCol={5}
     gridSpanX={1}
     gridSpanY={1}
-    draggable={true}
-    resizable={true}
+    draggable={drag}
+    resizable={resize}
     allowedSizes={["1x1", "2x2", "3x3", "2x1", "1x2"]}
     title="Widget A"
     color="#f59e0b"
@@ -67,8 +71,8 @@
     gridCol={2}
     gridSpanX={1}
     gridSpanY={1}
-    draggable={true}
-    resizable={true}
+    draggable={drag}
+    resizable={resize}
     allowedSizes={["1x1", "2x2", "3x3", "2x1", "1x2"]}
     title="Widget B"
     color="#10b981"
@@ -79,10 +83,20 @@
     gridCol={1}
     gridSpanX={2}
     gridSpanY={1}
-    draggable={true}
-    resizable={true}
+    draggable={drag}
+    resizable={resize}
     allowedSizes={["1x1", "2x2", "3x3", "2x1", "1x2", "3x1"]}
     title="Wide Widget"
     color="#8b5cf6"
+  />
+
+  <!-- Calendar widget -->
+  <Calendar
+    gridRow={2}
+    gridCol={5}
+    gridSpanX={2}
+    gridSpanY={2}
+    draggable={drag}
+    resizable={resize}
   />
 </WidgetGrid>

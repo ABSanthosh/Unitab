@@ -1,5 +1,7 @@
 export interface ResizableOptions {
   onResize?: (spanX: number, spanY: number) => void;
+  onResizeStart?: () => void;
+  onResizeEnd?: () => void;
   allowedSizes?: string[]; // e.g., ["1x1", "2x2", "3x3"]
   disabled?: boolean;
 }
@@ -419,6 +421,11 @@ export function resizable(
     currentSpanX = span.spanX;
     currentSpanY = span.spanY;
 
+    // Call onResizeStart callback
+    if (options.onResizeStart) {
+      options.onResizeStart();
+    }
+
     // Add visual feedback and faster transition class for smooth resizing
     element.classList.add("resizing");
     element.style.zIndex = "1001";
@@ -505,6 +512,11 @@ export function resizable(
       (currentSpanX !== initialSpanX || currentSpanY !== initialSpanY)
     ) {
       options.onResize(currentSpanX, currentSpanY);
+    }
+
+    // Call onResizeEnd callback
+    if (options.onResizeEnd) {
+      options.onResizeEnd();
     }
   }
 

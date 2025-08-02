@@ -244,6 +244,10 @@
     padding: calc(var(--base-size) * 0.8);
     box-sizing: border-box;
 
+    & > * {
+      user-select: none;
+    }
+
     &__date {
       font-size: var(--date-size);
       font-family: "JetBrains Mono", monospace;
