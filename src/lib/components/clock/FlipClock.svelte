@@ -173,7 +173,8 @@
 
 <div
   bind:this={clockContainer}
-  class="FlipClock BlurBG draggable-widget"
+  class="FlipClock BlurBG"
+  class:draggable-widget={isDraggable}
   use:draggable={draggableOptions}
   use:resizable={resizableOptions}
   style="
