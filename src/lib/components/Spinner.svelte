@@ -54,6 +54,8 @@
 </div>
 
 <style lang="scss">
+  @use "../../styles/mixins.scss" as *;
+
   .loader-ios {
     height: 27px;
     width: 27px;

@@ -22,6 +22,10 @@ type CalendarSpan =
   | { x: 1; y: 1 } // Compact widget
   | { x: 2; y: 2 }; // Large widget
 
+type CatSpan =
+  | { x: 1; y: 1 } // Small cat widget
+  | { x: 2; y: 2 }; // Large cat widget
+
 type AnalogClockWidget = Widget & {
   type: "analog-clock";
   span: AnalogClockSpan;
@@ -49,6 +53,14 @@ type CalendarWidget = Widget & {
   };
 };
 
+type CatWidget = Widget & {
+  type: "cat";
+  span: CatSpan;
+  settings: {
+    // No specific settings for cat widget currently
+  };
+};
+
 interface SettingStore {
   options: {
     isDraggable: boolean;
@@ -56,7 +68,7 @@ interface SettingStore {
     wallpaper: string;
     showGrid: boolean;
   };
-  widgets: Record<string, AnalogClockWidget | FlipClockWidget | CalendarWidget>;
+  widgets: Record<string, AnalogClockWidget | FlipClockWidget | CalendarWidget | CatWidget>;
   wallpapers: string[];
 }
 
@@ -94,6 +106,13 @@ const defaultStore: SettingStore = {
       span: { x: 2, y: 2 },
       settings: {},
     },
+    "cat-1": {
+      id: "cat-1",
+      pos: { row: 1, col: 5 },
+      type: "cat",
+      span: { x: 2, y: 2 },
+      settings: {},
+    },
   },
   wallpapers: [
     "/assets/wallpapers/adwaita-d.jpg",
@@ -124,4 +143,4 @@ settingStore.subscribe((value) => {
 export default settingStore;
 
 // Export span types for use in components
-export type { AnalogClockSpan, FlipClockSpan, CalendarSpan };
+export type { AnalogClockSpan, FlipClockSpan, CalendarSpan, CatSpan };

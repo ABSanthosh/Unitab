@@ -7,6 +7,7 @@
   import TestWidget from "../../lib/components/widgets/TestWidget.svelte";
   import FlipClock from "../../lib/components/widgets/clock/FlipClock.svelte";
   import AnalogClock from "@/lib/components/widgets/clock/AnalogClock.svelte";
+  import Cat from "../../lib/components/widgets/Cat.svelte";
   import { get } from "svelte/store";
 
   settingStore.subscribe((value) => {
@@ -14,6 +15,8 @@
   });
 
   let settingStoreValue = $derived($settingStore);
+
+  // getRandomImageFromSubreddit().then(console.log).catch(console.error);
 </script>
 
 <WidgetGrid gridGap={10} gridPadding={40} showGrid={true} minWidgetSize={120}>
@@ -63,6 +66,27 @@
       />
     {:else if widget.type === "calendar"}
       <Calendar
+        id={widget.id}
+        pos={widget.pos}
+        span={widget.span}
+        settings={widget.settings}
+        isDraggable={settingStoreValue.options.isDraggable}
+        isResizable={settingStoreValue.options.isResizable}
+        onDragEnd={(newRow, newCol) => {
+          settingStore.update((store) => {
+            store.widgets[widgetId].pos = { row: newRow, col: newCol };
+            return store;
+          });
+        }}
+        onResize={(newSpan) => {
+          settingStore.update((store) => {
+            store.widgets[widgetId].span = newSpan;
+            return store;
+          });
+        }}
+      />
+    {:else if widget.type === "cat"}
+      <Cat
         id={widget.id}
         pos={widget.pos}
         span={widget.span}
