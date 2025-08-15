@@ -33,15 +33,9 @@
             return store;
           });
         }}
-        onResize={(newSpanX, newSpanY) => {
+        onResize={(newSpan) => {
           settingStore.update((store) => {
-            if (newSpanX === 1 && newSpanY === 1) {
-              store.widgets[widgetId].span = { x: 1, y: 1 };
-            } else if (newSpanX === 2 && newSpanY === 2) {
-              store.widgets[widgetId].span = { x: 2, y: 2 };
-            } else if (newSpanX === 2 && newSpanY === 1) {
-              store.widgets[widgetId].span = { x: 2, y: 1 };
-            }
+            store.widgets[widgetId].span = newSpan;
             return store;
           });
         }}
@@ -60,15 +54,9 @@
             return store;
           });
         }}
-        onResize={(newSpanX, newSpanY) => {
+        onResize={(newSpan) => {
           settingStore.update((store) => {
-            if (newSpanX === 1 && newSpanY === 1) {
-              store.widgets[widgetId].span = { x: 1, y: 1 };
-            } else if (newSpanX === 2 && newSpanY === 2) {
-              store.widgets[widgetId].span = { x: 2, y: 2 };
-            } else if (newSpanX === 2 && newSpanY === 1) {
-              store.widgets[widgetId].span = { x: 2, y: 1 };
-            }
+            store.widgets[widgetId].span = newSpan;
             return store;
           });
         }}

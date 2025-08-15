@@ -9,9 +9,18 @@ type Widget = {
   };
 };
 
+// Define valid span combinations for each widget type
+type AnalogClockSpan = 
+  | { x: 1; y: 1 }  // Small widget
+  | { x: 2; y: 2 }; // Large widget
+
+type FlipClockSpan = 
+  | { x: 2; y: 1 }  // Compact widget
+  | { x: 2; y: 2 }; // Large widget
+
 type AnalogClockWidget = Widget & {
   type: "analog-clock";
-  span: { x: 1; y: 1 } | { x: 2; y: 2 };
+  span: AnalogClockSpan;
   settings: {
     showNumbers: boolean;
     showSecondsHand: boolean;
@@ -21,7 +30,7 @@ type AnalogClockWidget = Widget & {
 
 type FlipClockWidget = Widget & {
   type: "flip-clock";
-  span: { x: 2; y: 1 };
+  span: FlipClockSpan;
   settings: {
     showSeconds: boolean;
     city?: SupportedCityName;
@@ -96,3 +105,6 @@ settingStore.subscribe((value) => {
 });
 
 export default settingStore;
+
+// Export span types for use in components
+export type { AnalogClockSpan, FlipClockSpan };

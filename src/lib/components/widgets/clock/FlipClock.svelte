@@ -13,6 +13,7 @@
     SUPPORTED_CITIES,
     type SupportedCityName,
   } from "../../../utils/timezone";
+  import type { FlipClockSpan } from "../../../stores/settingStore";
 
   interface Props {
     id: string;
@@ -20,26 +21,26 @@
       row: number;
       col: number;
     };
-    span: { x: 2; y: 1 };
+    span: FlipClockSpan;
     isDraggable?: boolean;
     isResizable?: boolean;
     settings: {
       showSeconds: boolean;
       city?: SupportedCityName;
     };
+    onResize: (newSpan: FlipClockSpan) => void;
     onDragEnd: (newRow: number, newCol: number) => void;
-    onResize: (newSpanX: number, newSpanY: number) => void;
   }
 
   let {
     id,
     pos,
     span,
+    settings,
+    onResize,
+    onDragEnd,
     isDraggable = true,
     isResizable = true,
-    settings,
-    onDragEnd = (newRow: number, newCol: number) => {},
-    onResize = (newSpanX: number, newSpanY: number) => {},
   }: Props = $props();
 
   let time = $state(new Date());
@@ -71,9 +72,11 @@
 
   // Handle resize to update size
   function handleResize(newSpanX: number, newSpanY: number) {
-    currentSpanX = newSpanX as 2;
-    currentSpanY = newSpanY as 1;
-    onResize(newSpanX, newSpanY);
+    // Type assertion to ensure only valid combinations are allowed
+    const newSpan = { x: newSpanX, y: newSpanY } as FlipClockSpan;
+    currentSpanX = newSpan.x;
+    currentSpanY = newSpan.y;
+    onResize(newSpan);
   }
 
   // Draggable options

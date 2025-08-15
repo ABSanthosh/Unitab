@@ -8,6 +8,7 @@
     getCityAbbreviation,
     type SupportedCityName,
   } from "../../../utils/timezone";
+  import type { AnalogClockSpan } from "../../../stores/settingStore";
 
   let time = $state(new Date());
 
@@ -17,7 +18,7 @@
       row: number;
       col: number;
     };
-    span: { x: 1; y: 1 } | { x: 2; y: 2 };
+    span: AnalogClockSpan;
     isDraggable?: boolean;
     isResizable?: boolean;
     settings: {
@@ -26,7 +27,7 @@
       showSecondsHand: boolean;
     };
     onDragEnd: (newRow: number, newCol: number) => void;
-    onResize: (newSpanX: number, newSpanY: number) => void;
+    onResize: (newSpan: AnalogClockSpan) => void;
   }
 
   // settings
@@ -35,13 +36,13 @@
 
   let {
     id,
-    pos = { row: 1, col: 1 },
-    span = { x: 2, y: 2 },
-    isDraggable,
-    isResizable,
+    onResize,
     settings,
-    onDragEnd = (newRow: number, newCol: number) => {},
-    onResize = (newSpanX: number, newSpanY: number) => {},
+    onDragEnd,
+    isResizable,
+    isDraggable,
+    span = { x: 2, y: 2 },
+    pos = { row: 1, col: 1 },
   }: Props = $props();
 
   // Current position and size state
@@ -89,9 +90,11 @@
 
   // Handle resize to update size
   function handleResize(newSpanX: number, newSpanY: number) {
-    currentSpanX = newSpanX as 1 | 2;
-    currentSpanY = newSpanY as 1 | 2;
-    onResize(newSpanX, newSpanY);
+    // Type assertion to ensure only valid combinations are allowed
+    const newSpan = { x: newSpanX, y: newSpanY } as AnalogClockSpan;
+    currentSpanX = newSpan.x;
+    currentSpanY = newSpan.y;
+    onResize(newSpan);
   }
 
   onMount(() => {
