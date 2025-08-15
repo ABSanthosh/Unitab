@@ -35,10 +35,40 @@
         }}
         onResize={(newSpanX, newSpanY) => {
           settingStore.update((store) => {
-            store.widgets[widgetId].span = {
-              x: newSpanX as 1 | 2,
-              y: newSpanY as 1 | 2,
-            };
+            if (newSpanX === 1 && newSpanY === 1) {
+              store.widgets[widgetId].span = { x: 1, y: 1 };
+            } else if (newSpanX === 2 && newSpanY === 2) {
+              store.widgets[widgetId].span = { x: 2, y: 2 };
+            } else if (newSpanX === 2 && newSpanY === 1) {
+              store.widgets[widgetId].span = { x: 2, y: 1 };
+            }
+            return store;
+          });
+        }}
+      />
+    {:else if widget.type === "flip-clock"}
+      <FlipClock
+        id={widget.id}
+        pos={widget.pos}
+        span={widget.span}
+        settings={widget.settings}
+        isDraggable={settingStoreValue.options.isDraggable}
+        isResizable={settingStoreValue.options.isResizable}
+        onDragEnd={(newRow, newCol) => {
+          settingStore.update((store) => {
+            store.widgets[widgetId].pos = { row: newRow, col: newCol };
+            return store;
+          });
+        }}
+        onResize={(newSpanX, newSpanY) => {
+          settingStore.update((store) => {
+            if (newSpanX === 1 && newSpanY === 1) {
+              store.widgets[widgetId].span = { x: 1, y: 1 };
+            } else if (newSpanX === 2 && newSpanY === 2) {
+              store.widgets[widgetId].span = { x: 2, y: 2 };
+            } else if (newSpanX === 2 && newSpanY === 1) {
+              store.widgets[widgetId].span = { x: 2, y: 1 };
+            }
             return store;
           });
         }}

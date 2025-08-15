@@ -6,23 +6,40 @@
   import { onMount, onDestroy } from "svelte";
   import { draggable, type DraggableOptions } from "../../../actions/draggable";
   import { resizable, type ResizableOptions } from "../../../actions/resizable";
+  import {
+    getTimeForCity,
+    getTimezoneOffset,
+    getCityAbbreviation,
+    SUPPORTED_CITIES,
+    type SupportedCityName,
+  } from "../../../utils/timezone";
 
   interface Props {
-    gridRow?: number;
-    gridCol?: number;
-    gridSpanX?: number;
-    gridSpanY?: number;
-    draggable?: boolean;
-    resizable?: boolean;
+    id: string;
+    pos: {
+      row: number;
+      col: number;
+    };
+    span: { x: 2; y: 1 };
+    isDraggable?: boolean;
+    isResizable?: boolean;
+    settings: {
+      showSeconds: boolean;
+      city?: SupportedCityName;
+    };
+    onDragEnd: (newRow: number, newCol: number) => void;
+    onResize: (newSpanX: number, newSpanY: number) => void;
   }
 
   let {
-    gridRow = 1,
-    gridCol = 1,
-    gridSpanX = 2,
-    gridSpanY = 1,
-    draggable: isDraggable = true,
-    resizable: isResizable = true,
+    id,
+    pos,
+    span,
+    isDraggable = true,
+    isResizable = true,
+    settings,
+    onDragEnd = (newRow: number, newCol: number) => {},
+    onResize = (newSpanX: number, newSpanY: number) => {},
   }: Props = $props();
 
   let time = $state(new Date());
@@ -31,53 +48,65 @@
   let interval: NodeJS.Timeout;
 
   // Current position and size state
-  let currentGridRow = $state(gridRow);
-  let currentGridCol = $state(gridCol);
-  let currentSpanX = $state(gridSpanX);
-  let currentSpanY = $state(gridSpanY);
+  let currentGridRow = $state(pos.row);
+  let currentGridCol = $state(pos.col);
+  let currentSpanX = $state(span.x);
+  let currentSpanY = $state(span.y);
+
+  // Get timezone offset and create city abbreviation
+  let timezoneOffset = $derived(
+    settings.city ? getTimezoneOffset(settings.city) : 0
+  );
+  let cityAbbr = $derived(getCityAbbreviation(settings.city));
+  let offsetDisplay = $derived(
+    timezoneOffset >= 0 ? `+${timezoneOffset}` : `${timezoneOffset}`
+  );
+
+  // Handle drag end to update position
+  function handleDragEnd(newRow: number, newCol: number) {
+    currentGridRow = newRow;
+    currentGridCol = newCol;
+    onDragEnd(newRow, newCol);
+  }
+
+  // Handle resize to update size
+  function handleResize(newSpanX: number, newSpanY: number) {
+    currentSpanX = newSpanX as 2;
+    currentSpanY = newSpanY as 1;
+    onResize(newSpanX, newSpanY);
+  }
 
   // Draggable options
   const draggableOptions: DraggableOptions = {
     disabled: !isDraggable,
-    onDragEnd: (row, col) => {
-      currentGridRow = row;
-      currentGridCol = col;
-    },
+    onDragEnd: handleDragEnd,
   };
 
   // Resizable options
   const resizableOptions: ResizableOptions = {
     disabled: !isResizable,
     allowedSizes: ["2x1", "2x2"],
-    onResize: (spanX, spanY) => {
-      currentSpanX = spanX;
-      currentSpanY = spanY;
-    },
+    onResize: handleResize,
   };
 
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  // I18n date formatting options
+  const dateFormatOptions: Intl.DateTimeFormatOptions = {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  };
 
-  // Reactive date calculation
+  // Reactive date calculation with i18n support
   const fullDate = $derived(() => {
-    const date = time.getDate();
-    const day = days[time.getDay()];
-    const month = months[time.getMonth()];
-    const year = time.getFullYear();
-    return `${day}, ${date} ${month} ${year}`;
+    const timezone = settings.city
+      ? SUPPORTED_CITIES.find((c) => c.name === settings.city)?.timezone
+      : undefined;
+
+    return new Intl.DateTimeFormat("en-US", {
+      ...dateFormatOptions,
+      timeZone: timezone,
+    }).format(time);
   });
 
   let display = $state([
@@ -98,6 +127,20 @@
     },
   ]);
 
+  // Get display segments based on settings
+  const getTimeSegments = (time: Date) => {
+    const segments = [
+      (time.getHours() % 12 || 12).toString().padStart(2, "0"),
+      time.getMinutes().toString().padStart(2, "0"),
+    ];
+
+    if (settings.showSeconds) {
+      segments.push(time.getSeconds().toString().padStart(2, "0"));
+    }
+
+    return segments;
+  };
+
   // Update container width for responsive font sizing
   function updateContainerSize() {
     if (clockContainer) {
@@ -107,14 +150,15 @@
 
   onMount(() => {
     // Initialize time and display
-    time = new Date();
-    const initialData = [
-      (time.getHours() % 12 || 12).toString().padStart(2, "0"),
-      time.getMinutes().toString().padStart(2, "0"),
-      time.getSeconds().toString().padStart(2, "0"),
-    ];
+    const updateTime = () => {
+      time = getTimeForCity(settings.city);
+    };
 
-    display = initialData.map((value) => ({
+    // Initial update
+    updateTime();
+
+    const initialSegments = getTimeSegments(time);
+    display = initialSegments.map((value) => ({
       top: value,
       bottom: value,
       transition: false,
@@ -134,25 +178,26 @@
 
     // Start the clock interval
     interval = setInterval(() => {
-      time = new Date();
-      const newData = [
-        (time.getHours() % 12 || 12).toString().padStart(2, "0"),
-        time.getMinutes().toString().padStart(2, "0"),
-        time.getSeconds().toString().padStart(2, "0"),
-      ];
+      updateTime();
+      const newSegments = getTimeSegments(time);
+
+      // Pad the display array if showing seconds
+      while (display.length < newSegments.length) {
+        display = [...display, { top: "00", bottom: "00", transition: false }];
+      }
 
       // Trigger flip animation for changed segments
-      display = display.map(({ bottom }, i) => ({
-        top: newData[i],
+      display = display.slice(0, newSegments.length).map(({ bottom }, i) => ({
+        top: newSegments[i],
         bottom,
-        transition: newData[i] !== bottom,
+        transition: newSegments[i] !== bottom,
       }));
 
       // Complete the flip after animation
       setTimeout(() => {
         display = display.map((_, i) => ({
-          bottom: newData[i],
-          top: newData[i],
+          bottom: newSegments[i],
+          top: newSegments[i],
           transition: false,
         }));
       }, 500);
@@ -172,6 +217,7 @@
 </script>
 
 <div
+  {id}
   bind:this={clockContainer}
   class="FlipClock BlurBG"
   class:draggable-widget={isDraggable}
@@ -207,7 +253,7 @@
             </span>
           </p>
         </div>
-        {#if index < 2}
+        {#if index < display.length - 1}
           <div class="FlipClock__colon">:</div>
         {/if}
       {/each}
@@ -222,12 +268,21 @@
             {segment.bottom}
           </p>
         </div>
-        {#if index < 2}
+        {#if index < display.length - 1}
           <div class="FlipClock__colon">:</div>
         {/if}
       {/each}
     </div>
   </div>
+
+  <!-- City and timezone information -->
+  {#if settings.city}
+    <div class="FlipClock__timezone-info">
+      <span class="FlipClock__city">{cityAbbr}</span>
+      <span class="FlipClock__offset">{offsetDisplay}</span>
+    </div>
+  {/if}
+
   <p class="FlipClock__date">
     {fullDate()}
   </p>
@@ -256,6 +311,26 @@
       margin: 0;
       text-align: center;
       white-space: nowrap;
+    }
+
+    &__timezone-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: calc(var(--base-size) * 0.5);
+      font-family: "JetBrains Mono", monospace;
+      font-size: calc(var(--date-size) * 0.8);
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0;
+    }
+
+    &__city {
+      font-weight: 600;
+    }
+
+    &__offset {
+      opacity: 0.7;
+      font-size: 0.9em;
     }
 
     &__box {

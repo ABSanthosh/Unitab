@@ -21,10 +21,7 @@ type AnalogClockWidget = Widget & {
 
 type FlipClockWidget = Widget & {
   type: "flip-clock";
-  span: {
-    x: 1 | 2;
-    y: 1 | 2;
-  };
+  span: { x: 2; y: 1 };
   settings: {
     showSeconds: boolean;
     city?: SupportedCityName;
@@ -59,6 +56,16 @@ const defaultStore: SettingStore = {
         showNumbers: true,
         showSecondsHand: true,
         city: "New York",
+      },
+    },
+    "flip-clock-1": {
+      id: "flip-clock-1",
+      pos: { row: 1, col: 3 },
+      type: "flip-clock",
+      span: { x: 2, y: 1 },
+      settings: {
+        showSeconds: true,
+        city: "Tokyo",
       },
     },
   },
