@@ -53,10 +53,11 @@ body,
 }
 
 body {
-  background-image: url("/assets/wallpapers/ventura-d.jpg");
+  /* Background is now set in HTML and managed by Svelte store */
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
+  transition: background-image 0.3s ease-in-out;
 }
 
 // global needs

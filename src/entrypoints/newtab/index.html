@@ -5,6 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Unitab</title>
     <meta name="manifest.type" content="browser_action" />
+    <style>
+      /* Prevent white flash by setting immediate background */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #1a1a1a;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+      
+      #app {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+    <script>
+      // Set wallpaper immediately from localStorage to prevent flash
+      try {
+        const storedSettings = JSON.parse(localStorage.getItem('settingStore') || '{}');
+        const wallpaper = storedSettings?.options?.wallpaper || '/assets/wallpapers/blobs-l.svg';
+        document.documentElement.style.setProperty('--initial-wallpaper', `url("${wallpaper}")`);
+        document.body.style.backgroundImage = `url("${wallpaper}")`;
+      } catch (e) {
+        document.body.style.backgroundImage = 'url("/assets/wallpapers/blobs-l.svg")';
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>
