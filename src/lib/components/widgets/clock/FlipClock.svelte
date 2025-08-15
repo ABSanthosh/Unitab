@@ -4,8 +4,8 @@
   // Ref: https://github.com/ronanru/svelte-flip-clock/blob/main/src/lib/FlipClock.svelte
   // Insp: https://gridfiti.com/wp-content/uploads/2021/08/Gridfiti_Blog_BestiPadWidgets_Clock.jpg
   import { onMount, onDestroy } from "svelte";
-  import { draggable, type DraggableOptions } from "../../actions/draggable";
-  import { resizable, type ResizableOptions } from "../../actions/resizable";
+  import { draggable, type DraggableOptions } from "../../../actions/draggable";
+  import { resizable, type ResizableOptions } from "../../../actions/resizable";
 
   interface Props {
     gridRow?: number;

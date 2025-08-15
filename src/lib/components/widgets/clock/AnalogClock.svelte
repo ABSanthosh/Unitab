@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { draggable, type DraggableOptions } from "../../actions/draggable";
-  import { resizable, type ResizableOptions } from "../../actions/resizable";
+  import { draggable, type DraggableOptions } from "../../../actions/draggable";
+  import { resizable, type ResizableOptions } from "../../../actions/resizable";
 
   let time = $state(new Date());
 
@@ -142,7 +142,7 @@
 </div>
 
 <style lang="scss">
-  @use "../../../styles/mixins.scss" as *;
+  @use "../../../../styles/mixins.scss" as *;
 
   .AnalogClock {
     // Ensure component fits within grid system

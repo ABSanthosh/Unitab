@@ -3,10 +3,10 @@
 <script lang="ts">
   import settingStore from "../../lib/stores/settingStore";
   import WidgetGrid from "../../lib/components/WidgetGrid.svelte";
-  import FlipClock from "../../lib/components/clock/FlipClock.svelte";
-  import TestWidget from "../../lib/components/widgets/TestWidget.svelte";
-  import AnalogClock from "@/lib/components/clock/AnalogClock.svelte";
   import Calendar from "../../lib/components/widgets/Calendar.svelte";
+  import TestWidget from "../../lib/components/widgets/TestWidget.svelte";
+  import FlipClock from "../../lib/components/widgets/clock/FlipClock.svelte";
+  import AnalogClock from "@/lib/components/widgets/clock/AnalogClock.svelte";
 
   let widgetGrid: WidgetGrid;
 
