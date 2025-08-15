@@ -44,7 +44,7 @@
 
   // Get the cached image state for this widget
   const widgetCacheState = $derived($catImageStates[id]);
-  
+
   // Update imgSrc when cache state changes
   $effect(() => {
     if (widgetCacheState?.image) {
@@ -62,7 +62,7 @@
   let currentSpanY = $state(span.y);
 
   let tooLong = $state(false);
-  const sizeType = $derived(span.x === 1 && span.y === 1 ? "small" : "large");
+  let sizeType = $derived(span.x === 1 && span.y === 1 ? "small" : "large");
 
   // Function to refresh the cat image
   async function refreshImage() {
@@ -139,25 +139,7 @@
   use:draggable={draggableOptions}
   use:resizable={resizableOptions}
 >
-  {#if imgSrc.imageUrl && !isLoading}
-    {#if sizeType === "large"}
-      <div class="CatBox__details">
-        <h4>
-          <a href={imgSrc.postUrl} target="_blank">
-            r/{imgSrc.subreddit}
-          </a>
-        </h4>
-        <h2 title={imgSrc.title}>{imgSrc.title}</h2>
-        <button class="refresh-btn" onclick={refreshImage} title="Get a new cat image">
-          🔄
-        </button>
-      </div>
-    {:else}
-      <button class="refresh-btn refresh-btn--small" onclick={refreshImage} title="Get a new cat image">
-        🔄
-      </button>
-    {/if}
-  {:else}
+  {#if !imgSrc.imageUrl}
     <BlurredSpinner zIndex={-2}>
       {#if tooLong && !isLoading}
         <h3 class="CatBox--tooLong">
@@ -179,15 +161,14 @@
   .CatBox {
     color: #e4e4e4;
     position: relative;
+    border-radius: 20px;
     background-size: cover;
     background-position: center;
     @include make-flex($just: flex-end);
-    border-radius: 20px;
     box-shadow: 0 0 20px 1px #00000087;
 
     // Let the widget grid system control dimensions
-    width: 100%;
-    height: 100%;
+    @include box();
     min-height: 120px; // Ensure minimum usability
 
     &--tooLong {
@@ -199,24 +180,8 @@
     &--error {
       z-index: 1;
       padding: 20px;
-      text-align: center;
       color: #ff6b6b;
-      
-      .retry-btn {
-        margin-top: 10px;
-        padding: 8px 16px;
-        background: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 8px;
-        color: #e4e4e4;
-        cursor: pointer;
-        transition: all 0.2s ease;
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.3);
-          border-color: rgba(255, 255, 255, 0.5);
-        }
-      }
+      text-align: center;
     }
 
     &:hover {
@@ -226,11 +191,11 @@
     }
 
     &__details {
+      width: 100%;
       padding: 20px;
+      min-height: 80px; // Responsive height
       overflow: hidden;
       position: relative;
-      width: 100%;
-      min-height: 80px; // Responsive height
       border-radius: 0 0 20px 20px;
 
       opacity: 0;
@@ -238,10 +203,10 @@
 
       &::after {
         content: "";
-        position: absolute;
         left: -30px;
         z-index: -1;
         bottom: -50px;
+        position: absolute;
         @include box(111%, 100%);
         background: rgba(0, 0, 0, 0.87);
         filter: blur(17.149999618530273px);
@@ -275,38 +240,7 @@
     }
   }
 
-  .refresh-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(4px);
-    z-index: 2;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.8);
-      transform: scale(1.1);
-    }
-
-    &--small {
-      opacity: 1;
-      background: rgba(0, 0, 0, 0.4);
-    }
-  }
-
-  .CatBox:hover .refresh-btn {
+  .CatBox:hover {
     opacity: 1;
   }
 </style>

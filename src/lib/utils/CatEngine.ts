@@ -22,6 +22,7 @@ interface RedditPost {
   subreddit: string;
   author: string;
   over_18: boolean;
+  is_gallery?: boolean;
 }
 
 export class CatEngine {
@@ -32,20 +33,24 @@ export class CatEngine {
     "catsinboxes",
     "CatsInBusinessAttire",
     "CatsInHats",
-    "funnycats",
   ];
 
   private readonly magazineKey = "catImageMagazineV1";
-  private readonly targetPreload = 5;
-  private readonly initialFill = 5;
+  private readonly targetPreload = 5; // how many to keep in magazine
+  private readonly initialFill = 5; // on cold start
+  private readonly preloadLookahead = 3; // how many upcoming URLs to warm
+
+  // Track which URLs we already asked the browser to preload, to avoid churn
+  private readonly preloaded = new Map<string, HTMLImageElement>();
 
   /**
    * Fetch a random cat image from Reddit
    */
   async fetchRandomCatImage(): Promise<CatImage> {
-    const sub = this.subreddits[Math.floor(Math.random() * this.subreddits.length)];
+    const sub =
+      this.subreddits[Math.floor(Math.random() * this.subreddits.length)];
     const resp = await fetch(
-      `https://www.reddit.com/r/${encodeURIComponent(sub)}/hot.json?limit=5`,
+      `https://www.reddit.com/r/${encodeURIComponent(sub)}/hot.json?limit=25`,
       { headers: { "User-Agent": "random-image-demo/1.0" } }
     );
 
@@ -58,13 +63,15 @@ export class CatEngine {
     const images = posts.filter((p) => {
       const url = p.url_overridden_by_dest || p.url || "";
       const isImageHost =
-        /^(https?:)?\/\/(i\.redd\.it|i\.imgur\.com|preview\.redd\.it)/i.test(url) ||
-        /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
-      return !p.over_18 && isImageHost;
+        /^(https?:)?\/\/(i\.redd\.it|i\.imgur\.com|preview\.redd\.it)/i.test(
+          url
+        ) || /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+      const notGallery = !p.is_gallery;
+      return !p.over_18 && isImageHost && notGallery;
     });
 
     if (!images.length) throw new Error("No image posts found.");
-    
+
     const pick = images[Math.floor(Math.random() * images.length)];
     return {
       title: pick.title,
@@ -88,7 +95,7 @@ export class CatEngine {
         lastErr = e;
       }
     }
-    throw lastErr ?? new Error("Failed to fetch cat image");
+    throw (lastErr as Error) ?? new Error("Failed to fetch cat image");
   }
 
   /**
@@ -152,8 +159,49 @@ export class CatEngine {
         mag.push(img);
         this.writeMagazine(mag);
       }
+      // After topping up, warm the cache for upcoming images
+      this.preloadUpcoming();
     } catch {
       // Swallow errors; UX still shows the immediately returned image
+    }
+  }
+
+  /**
+   * Preload next few images by creating Image objects to warm HTTP cache.
+   * This is a best-effort, zero-maintenance preloader.
+   */
+  private preloadUpcoming() {
+    const mag = this.readMagazine();
+    const nextUrls = mag
+      .slice(0, this.preloadLookahead)
+      .map((m) => m.imageUrl)
+      .filter((u): u is string => !!u);
+
+    // Remove references for URLs that are no longer in our lookahead
+    for (const [url, img] of this.preloaded) {
+      if (!nextUrls.includes(url)) {
+        // Drop our reference; the browser cache retains the resource
+        img.onload = null;
+        img.onerror = null;
+        this.preloaded.delete(url);
+      }
+    }
+
+    // Add new preloaders for unseen URLs
+    for (const url of nextUrls) {
+      if (this.preloaded.has(url)) continue;
+      try {
+        const img = new Image();
+        img.decoding = "async";
+        img.loading = "eager";
+        // Optional: avoid referrer leakage; adjust if you need referers.
+        img.referrerPolicy = "no-referrer";
+        img.src = url;
+        // No need to attach to DOM; request starts immediately.
+        this.preloaded.set(url, img);
+      } catch {
+        // ignore
+      }
     }
   }
 
@@ -170,8 +218,10 @@ export class CatEngine {
       this.writeMagazine(filled);
       const [first, ...rest] = filled;
       this.writeMagazine(rest);
-      // Top up to keep targetPreload ready after returning one
+      // Top up and start preloading upcoming images
       void this.topUpAsync(); // fire-and-forget
+      // Warm cache for what's currently in rest
+      this.preloadUpcoming();
       return first;
     }
 
@@ -179,7 +229,8 @@ export class CatEngine {
     const next = mag.shift()!;
     this.writeMagazine(mag);
 
-    // Top up in the background to maintain preload
+    // Preload now for remaining magazine, then top up in background
+    this.preloadUpcoming();
     void this.topUpAsync();
 
     return next;
@@ -194,6 +245,12 @@ export class CatEngine {
     } catch {
       // ignore errors
     }
+    // Drop preloader references
+    for (const [, img] of this.preloaded) {
+      img.onload = null;
+      img.onerror = null;
+    }
+    this.preloaded.clear();
   }
 
   /**
@@ -205,6 +262,8 @@ export class CatEngine {
       count: mag.length,
       targetPreload: this.targetPreload,
       needsRefill: mag.length < this.targetPreload,
+      lookahead: this.preloadLookahead,
+      preloadedCount: this.preloaded.size,
     };
   }
 }
