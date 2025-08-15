@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+import { SupportedCityName } from "../utils/timezone";
 
 type Widget = {
   id: string;
@@ -10,20 +11,56 @@ type Widget = {
 
 type AnalogClockWidget = Widget & {
   type: "analog-clock";
+  span: { x: 1; y: 1 } | { x: 2; y: 2 };
+  settings: {
+    showNumbers: boolean;
+    showSecondsHand: boolean;
+    city?: SupportedCityName;
+  };
+};
+
+type FlipClockWidget = Widget & {
+  type: "flip-clock";
   span: {
     x: 1 | 2;
     y: 1 | 2;
   };
   settings: {
-    showNumbers: boolean;
-    showSecondsHand: boolean;
+    showSeconds: boolean;
+    city?: SupportedCityName;
   };
 };
 
-const defaultStore = {
+interface SettingStore {
   options: {
-    reordering: true,
+    isDraggable: boolean;
+    isResizable: boolean;
+    wallpaper: string;
+    showGrid: boolean;
+  };
+  widgets: Record<string, AnalogClockWidget | FlipClockWidget>;
+  wallpapers: string[];
+}
+
+const defaultStore: SettingStore = {
+  options: {
+    isDraggable: true,
+    isResizable: true,
     wallpaper: "/assets/wallpapers/blobs-l.svg",
+    showGrid: true,
+  },
+  widgets: {
+    "analog-clock-1": {
+      id: "analog-clock-1",
+      pos: { row: 1, col: 1 },
+      type: "analog-clock",
+      span: { x: 2, y: 2 },
+      settings: {
+        showNumbers: true,
+        showSecondsHand: true,
+        city: "New York",
+      },
+    },
   },
   wallpapers: [
     "/assets/wallpapers/adwaita-d.jpg",
@@ -38,13 +75,9 @@ const defaultStore = {
   ],
 };
 
-const settingStore = writable<{
-  options: {
-    reordering: boolean;
-    wallpaper: string;
-  };
-  wallpapers: string[];
-}>(JSON.parse(window.localStorage.getItem("settingStore")!) ?? defaultStore);
+const settingStore = writable<SettingStore>(
+  JSON.parse(window.localStorage.getItem("settingStore")!) ?? defaultStore
+);
 
 let timer: NodeJS.Timeout | null;
 

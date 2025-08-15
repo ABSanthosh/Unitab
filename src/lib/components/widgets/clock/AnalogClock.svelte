@@ -12,14 +12,21 @@
   let time = $state(new Date());
 
   interface Props {
-    gridRow?: number;
-    gridCol?: number;
-    gridSpanX?: number;
-    gridSpanY?: number;
-    draggable?: boolean;
-    resizable?: boolean;
     id: string;
-    city?: SupportedCityName;
+    pos: {
+      row: number;
+      col: number;
+    };
+    span: { x: 1; y: 1 } | { x: 2; y: 2 };
+    isDraggable?: boolean;
+    isResizable?: boolean;
+    settings: {
+      showNumbers: boolean;
+      city?: SupportedCityName;
+      showSecondsHand: boolean;
+    };
+    onDragEnd: (newRow: number, newCol: number) => void;
+    onResize: (newSpanX: number, newSpanY: number) => void;
   }
 
   // settings
@@ -28,20 +35,20 @@
 
   let {
     id,
-    gridRow = 1,
-    gridCol = 1,
-    gridSpanX = 2,
-    gridSpanY = 2,
-    draggable: isDraggable = true,
-    resizable: isResizable = true,
-    city,
+    pos = { row: 1, col: 1 },
+    span = { x: 2, y: 2 },
+    isDraggable,
+    isResizable,
+    settings,
+    onDragEnd = (newRow: number, newCol: number) => {},
+    onResize = (newSpanX: number, newSpanY: number) => {},
   }: Props = $props();
 
   // Current position and size state
-  let currentGridRow = $state(gridRow);
-  let currentGridCol = $state(gridCol);
-  let currentSpanX = $state(gridSpanX);
-  let currentSpanY = $state(gridSpanY);
+  let currentGridRow = $state(pos.row);
+  let currentGridCol = $state(pos.col);
+  let currentSpanX = $state(span.x);
+  let currentSpanY = $state(span.y);
 
   // Draggable options
   const draggableOptions = {
@@ -61,8 +68,10 @@
   let seconds = $derived(time.getSeconds());
 
   // Get timezone offset and create city abbreviation
-  let timezoneOffset = $derived(city ? getTimezoneOffset(city) : 0);
-  let cityAbbr = $derived(getCityAbbreviation(city));
+  let timezoneOffset = $derived(
+    settings.city ? getTimezoneOffset(settings.city) : 0
+  );
+  let cityAbbr = $derived(getCityAbbreviation(settings.city));
   let offsetDisplay = $derived(
     timezoneOffset >= 0 ? `+${timezoneOffset}` : `${timezoneOffset}`
   );
@@ -75,17 +84,19 @@
   function handleDragEnd(newRow: number, newCol: number) {
     currentGridRow = newRow;
     currentGridCol = newCol;
+    onDragEnd(newRow, newCol);
   }
 
   // Handle resize to update size
   function handleResize(newSpanX: number, newSpanY: number) {
-    currentSpanX = newSpanX;
-    currentSpanY = newSpanY;
+    currentSpanX = newSpanX as 1 | 2;
+    currentSpanY = newSpanY as 1 | 2;
+    onResize(newSpanX, newSpanY);
   }
 
   onMount(() => {
     const updateTime = () => {
-      time = getTimeForCity(city);
+      time = getTimeForCity(settings.city);
     };
 
     // Initial update
@@ -143,7 +154,7 @@
     {/each}
 
     <!-- City name and timezone offset in center -->
-    {#if city}
+    {#if settings.city}
       <text x="0" y="-12" text-anchor="middle" class="AnalogClock__city-text">
         {cityAbbr}
       </text>
@@ -274,7 +285,7 @@
       font-weight: 500;
       letter-spacing: 0.2px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      sans-serif;
+        sans-serif;
     }
 
     &__minor {

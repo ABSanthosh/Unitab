@@ -7,74 +7,86 @@
   import TestWidget from "../../lib/components/widgets/TestWidget.svelte";
   import FlipClock from "../../lib/components/widgets/clock/FlipClock.svelte";
   import AnalogClock from "@/lib/components/widgets/clock/AnalogClock.svelte";
-
-  let widgetGrid: WidgetGrid;
-
-  // Optional: Access grid information
-  function getGridInfo() {
-    if (widgetGrid) {
-      return widgetGrid.getGridInfo();
-    }
-    return null;
-  }
+  import { get } from "svelte/store";
 
   settingStore.subscribe((value) => {
     document.body.style.backgroundImage = `url(${value.options.wallpaper})`;
   });
 
-  const drag = $state(true);
-  const resize = $state(true);
+  let settingStoreValue = $derived($settingStore);
 </script>
 
-<WidgetGrid
-  bind:this={widgetGrid}
-  minWidgetSize={120}
-  gridGap={10}
-  gridPadding={40}
-  showGrid={true}
->
-  <!-- <FlipClock
-    gridRow={1}
-    gridCol={1}
-    gridSpanX={2}
-    gridSpanY={1}
-    draggable={drag}
-    resizable={resize}
-  /> -->
-
-  <AnalogClock
-    gridRow={1}
-    gridCol={3}
-    gridSpanX={2}
-    gridSpanY={2}
-    draggable={drag}
-    resizable={resize}
-    id="analog-clock"
-  />
-
-  <AnalogClock id="local-clock" />
-
-  <AnalogClock id="ny-clock" city="New York" gridCol={3} />
-
-  <AnalogClock id="london-clock" city="London" gridCol={5} />
-
-  <AnalogClock id="tokyo-clock" city="Tokyo" gridRow={3} />
-
-  <AnalogClock
-    id="small-clock"
-    city="Sydney"
-    gridSpanX={1}
-    gridSpanY={1}
-    gridRow={3}
-    gridCol={3}
-  />
-
-  <!-- <Calendar
-    gridRow={2}
-    gridCol={5}
-    gridSpanX={2}
-    gridSpanY={2}
-    draggable={drag}
-    resizable={resize}
-  /> -->
+<WidgetGrid gridGap={10} gridPadding={40} showGrid={true} minWidgetSize={120}>
+  {#each Object.keys(settingStoreValue.widgets) as widgetId}
+    {@const widget = settingStoreValue.widgets[widgetId]}
+    {#if widget.type === "analog-clock"}
+      <AnalogClock
+        id={widget.id}
+        pos={widget.pos}
+        span={widget.span}
+        settings={widget.settings}
+        isDraggable={settingStoreValue.options.isDraggable}
+        isResizable={settingStoreValue.options.isResizable}
+        onDragEnd={(newRow, newCol) => {
+          settingStore.update((store) => {
+            store.widgets[widgetId].pos = { row: newRow, col: newCol };
+            return store;
+          });
+        }}
+        onResize={(newSpanX, newSpanY) => {
+          settingStore.update((store) => {
+            store.widgets[widgetId].span = {
+              x: newSpanX as 1 | 2,
+              y: newSpanY as 1 | 2,
+            };
+            return store;
+          });
+        }}
+      />
+    {/if}
+  {/each}
 </WidgetGrid>
+<!-- <FlipClock
+  gridRow={1}
+  gridCol={1}
+  gridSpanX={2}
+  gridSpanY={1}
+  draggable={drag}
+  resizable={resize}
+/>
+
+<AnalogClock
+  gridRow={1}
+  gridCol={3}
+  gridSpanX={2}
+  gridSpanY={2}
+  draggable={drag}
+  resizable={resize}
+  id="analog-clock"
+/>
+
+<AnalogClock id="local-clock" />
+
+<AnalogClock id="ny-clock" city="New York" gridCol={3} />
+
+<AnalogClock id="london-clock" city="London" gridCol={5} />
+
+<AnalogClock id="tokyo-clock" city="Tokyo" gridRow={3} />
+
+<AnalogClock
+  id="small-clock"
+  city="Sydney"
+  gridSpanX={1}
+  gridSpanY={1}
+  gridRow={3}
+  gridCol={3}
+/>
+
+<Calendar
+  gridRow={2}
+  gridCol={5}
+  gridSpanX={2}
+  gridSpanY={2}
+  draggable={drag}
+  resizable={resize}
+/> -->
