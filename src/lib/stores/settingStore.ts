@@ -10,16 +10,16 @@ type Widget = {
 };
 
 // Define valid span combinations for each widget type
-type AnalogClockSpan = 
-  | { x: 1; y: 1 }  // Small widget
+type AnalogClockSpan =
+  | { x: 1; y: 1 } // Small widget
   | { x: 2; y: 2 }; // Large widget
 
-type FlipClockSpan = 
-  | { x: 2; y: 1 }  // Compact widget
+type FlipClockSpan =
+  | { x: 2; y: 1 } // Compact widget
   | { x: 2; y: 2 }; // Large widget
 
-type CalendarSpan = 
-  | { x: 1; y: 1 }  // Compact widget
+type CalendarSpan =
+  | { x: 1; y: 1 } // Compact widget
   | { x: 2; y: 2 }; // Large widget
 
 type AnalogClockWidget = Widget & {
@@ -94,9 +94,7 @@ const defaultStore: SettingStore = {
       pos: { row: 3, col: 1 },
       type: "calendar",
       span: { x: 2, y: 2 },
-      settings: {
-        city: "London",
-      },
+      settings: {},
     },
   },
   wallpapers: [
