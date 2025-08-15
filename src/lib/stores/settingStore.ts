@@ -18,6 +18,10 @@ type FlipClockSpan =
   | { x: 2; y: 1 }  // Compact widget
   | { x: 2; y: 2 }; // Large widget
 
+type CalendarSpan = 
+  | { x: 1; y: 1 }  // Compact widget
+  | { x: 2; y: 2 }; // Large widget
+
 type AnalogClockWidget = Widget & {
   type: "analog-clock";
   span: AnalogClockSpan;
@@ -37,6 +41,14 @@ type FlipClockWidget = Widget & {
   };
 };
 
+type CalendarWidget = Widget & {
+  type: "calendar";
+  span: CalendarSpan;
+  settings: {
+    city?: SupportedCityName;
+  };
+};
+
 interface SettingStore {
   options: {
     isDraggable: boolean;
@@ -44,7 +56,7 @@ interface SettingStore {
     wallpaper: string;
     showGrid: boolean;
   };
-  widgets: Record<string, AnalogClockWidget | FlipClockWidget>;
+  widgets: Record<string, AnalogClockWidget | FlipClockWidget | CalendarWidget>;
   wallpapers: string[];
 }
 
@@ -77,6 +89,15 @@ const defaultStore: SettingStore = {
         city: "Tokyo",
       },
     },
+    "calendar-1": {
+      id: "calendar-1",
+      pos: { row: 3, col: 1 },
+      type: "calendar",
+      span: { x: 2, y: 2 },
+      settings: {
+        city: "London",
+      },
+    },
   },
   wallpapers: [
     "/assets/wallpapers/adwaita-d.jpg",
@@ -107,4 +128,4 @@ settingStore.subscribe((value) => {
 export default settingStore;
 
 // Export span types for use in components
-export type { AnalogClockSpan, FlipClockSpan };
+export type { AnalogClockSpan, FlipClockSpan, CalendarSpan };

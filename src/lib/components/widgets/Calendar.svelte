@@ -1,46 +1,112 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { draggable, type DraggableOptions } from "../../actions/draggable";
-  import { resizable, type ResizableOptions } from "../../actions/resizable";
+  import { onMount } from "svelte";
+  import { draggable } from "../../actions/draggable";
+  import { resizable } from "../../actions/resizable";
   import { ChevronLeft, ChevronRight, RotateCcw } from "@lucide/svelte";
+  import { getTimeForCity, type SupportedCityName } from "../../utils/timezone";
+  import type { CalendarSpan } from "../../stores/settingStore";
 
   interface Props {
-    gridRow?: number;
-    gridCol?: number;
-    gridSpanX?: number;
-    gridSpanY?: number;
-    draggable?: boolean;
-    resizable?: boolean;
-    id?: string;
+    id: string;
+    pos: {
+      row: number;
+      col: number;
+    };
+    span: CalendarSpan;
+    isDraggable?: boolean;
+    isResizable?: boolean;
+    settings: {
+      city?: SupportedCityName;
+    };
+    onDragEnd: (newRow: number, newCol: number) => void;
+    onResize: (newSpan: CalendarSpan) => void;
   }
 
   let {
-    gridRow = 1,
-    gridCol = 1,
-    gridSpanX = 2,
-    gridSpanY = 2,
-    draggable: isDraggable = true,
-    resizable: isResizable = true,
-    id = "calendar",
+    id,
+    pos = { row: 1, col: 1 },
+    span = { x: 2, y: 2 },
+    isDraggable,
+    isResizable,
+    settings,
+    onDragEnd = (newRow: number, newCol: number) => {},
+    onResize = (newSpan: CalendarSpan) => {},
   }: Props = $props();
 
   // Current position and size state
-  let currentGridRow = $state(gridRow);
-  let currentGridCol = $state(gridCol);
-  let currentSpanX = $state(gridSpanX);
-  let currentSpanY = $state(gridSpanY);
+  let currentGridRow = $state(pos.row);
+  let currentGridCol = $state(pos.col);
+  let currentSpanX = $state(span.x);
+  let currentSpanY = $state(span.y);
 
-  // Calendar data
-  let currentDate = new Date();
+  // Calendar data - using timezone-aware date
+  let currentDate = $state(getTimeForCity(settings.city));
   let currentMonth = $state(currentDate.getMonth());
   let currentYear = $state(currentDate.getFullYear());
   let today = $state(currentDate.getDate());
 
+  // Update calendar when timezone changes
+  $effect(() => {
+    currentDate = getTimeForCity(settings.city);
+    // Only update today if we're viewing the current month
+    const now = getTimeForCity(settings.city);
+    if (currentMonth === now.getMonth() && currentYear === now.getFullYear()) {
+      today = now.getDate();
+    }
+  });
+
+  // Draggable options
+  const draggableOptions = {
+    disabled: !isDraggable,
+    onDragEnd: handleDragEnd,
+  };
+
+  // Resizable options
+  const resizableOptions = {
+    disabled: !isResizable,
+    allowedSizes: ["1x1", "2x2"],
+    onResize: handleResize,
+    onResizeStart: () => {
+      isResizing = true;
+    },
+    onResizeEnd: () => {
+      // Clear any existing timeout
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      // Reset isResizing after a short delay
+      resizeTimeout = setTimeout(() => {
+        isResizing = false;
+      }, 100);
+    },
+  };
+
+  // Handle drag end to update position
+  function handleDragEnd(newRow: number, newCol: number) {
+    currentGridRow = newRow;
+    currentGridCol = newCol;
+    onDragEnd(newRow, newCol);
+  }
+
+  // Handle resize to update size
+  function handleResize(newSpanX: number, newSpanY: number) {
+    const newSpan = { x: newSpanX, y: newSpanY } as CalendarSpan;
+    currentSpanX = newSpan.x;
+    currentSpanY = newSpan.y;
+    onResize(newSpan);
+  }
+  // Track if we're currently resizing to hide content
+  let isResizing = $state(false);
+  let resizeTimeout: ReturnType<typeof setTimeout>;
+
+  // Calendar utility functions
   const resetMonth = () => {
-    currentMonth = currentDate.getMonth();
-    currentYear = currentDate.getFullYear();
-    today = currentDate.getDate();
+    const now = getTimeForCity(settings.city);
+    currentMonth = now.getMonth();
+    currentYear = now.getFullYear();
+    today = now.getDate();
   };
 
   const nextMonth = () => {
@@ -61,90 +127,66 @@
     }
   };
 
-  // Draggable options
-  const draggableOptions: DraggableOptions = {
-    disabled: !isDraggable,
-    onDragEnd: (row, col) => {
-      currentGridRow = row;
-      currentGridCol = col;
-    },
-  };
+  // Internationalized calendar data based on timezone
+  let localeData = $derived(() => {
+    const date = getTimeForCity(settings.city);
+    const locale = getLocaleForCity(settings.city);
 
-  // Resizable options
-  const resizableOptions: ResizableOptions = {
-    disabled: !isResizable,
-    allowedSizes: ["1x1", "2x2"],
-    onResizeStart: () => {
-      isResizing = true;
-    },
-    onResize: (spanX, spanY) => {
-      currentSpanX = spanX;
-      currentSpanY = spanY;
-    },
-    onResizeEnd: () => {
-      // Clear any existing timeout
-      if (resizeTimeout) {
-        clearTimeout(resizeTimeout);
-      }
-      // Reset isResizing after a short delay
-      resizeTimeout = setTimeout(() => {
-        isResizing = false;
-      }, 100);
-    },
-  };
+    return {
+      monthNames: Array.from({ length: 12 }, (_, i) =>
+        new Intl.DateTimeFormat(locale, { month: "long" }).format(
+          new Date(2024, i, 1)
+        )
+      ),
+      shortMonthNames: Array.from({ length: 12 }, (_, i) =>
+        new Intl.DateTimeFormat(locale, { month: "short" }).format(
+          new Date(2024, i, 1)
+        )
+      ),
+      dayNames: Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(2024, 0, 7 + i); // Start from a Sunday
+        return new Intl.DateTimeFormat(locale, { weekday: "long" }).format(
+          date
+        );
+      }),
+      shortDayNames: Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(2024, 0, 7 + i);
+        return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(
+          date
+        );
+      }),
+      dayAbbreviations: Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(2024, 0, 7 + i);
+        return new Intl.DateTimeFormat(locale, { weekday: "narrow" }).format(
+          date
+        );
+      }),
+    };
+  });
 
-  // Track if we're currently resizing to hide content
-  let isResizing = $state(false);
-  let resizeTimeout: ReturnType<typeof setTimeout>;
+  // Helper function to get appropriate locale for a city
+  function getLocaleForCity(city?: SupportedCityName): string {
+    const localeMap: Record<string, string> = {
+      "New York": "en-US",
+      "Los Angeles": "en-US",
+      Chicago: "en-US",
+      London: "en-GB",
+      Paris: "fr-FR",
+      Berlin: "de-DE",
+      Tokyo: "ja-JP",
+      Sydney: "en-AU",
+      Dubai: "ar-AE",
+      Singapore: "en-SG",
+      "Hong Kong": "zh-HK",
+      Mumbai: "en-IN",
+    };
 
-  // Calendar utilities
-  const monthNames = [
-    "JANUARY",
-    "FEBRUARY",
-    "MARCH",
-    "APRIL",
-    "MAY",
-    "JUNE",
-    "JULY",
-    "AUGUST",
-    "SEPTEMBER",
-    "OCTOBER",
-    "NOVEMBER",
-    "DECEMBER",
-  ];
+    return city ? localeMap[city] || "en-US" : "en-US";
+  }
 
-  const shortMonthNames = [
-    "JAN",
-    "FEB",
-    "MAR",
-    "APR",
-    "MAY",
-    "JUN",
-    "JUL",
-    "AUG",
-    "SEP",
-    "OCT",
-    "NOV",
-    "DEC",
-  ];
-
-  const dayNames = [
-    "SUNDAY",
-    "MONDAY",
-    "TUESDAY",
-    "WEDNESDAY",
-    "THURSDAY",
-    "FRIDAY",
-    "SATURDAY",
-  ];
-
-  const shortDayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-
-  const dayAbbreviations = ["S", "M", "T", "W", "T", "F", "S"];
-
-  // Check if widget should show compact layout
-  // Show compact during resize OR when size is not 2x2
-  let shouldShowCompact = $derived(isResizing || !(currentSpanX === 2 && currentSpanY === 2));
+  // Widget size helpers
+  let isSmallWidget = $derived(currentSpanX === 1 && currentSpanY === 1);
+  let shouldShowCompact = $derived(isResizing || isSmallWidget);
 
   // Get current day of week for 1x1 mode
   let currentDayOfWeek = $derived(() => {
@@ -154,13 +196,33 @@
 
   // Get the actual current date for compact display
   let actualToday = $derived(() => {
-    const now = new Date();
+    const now = getTimeForCity(settings.city);
     return now.getDate();
+  });
+
+  // Update time periodically
+  onMount(() => {
+    const updateTime = () => {
+      const now = getTimeForCity(settings.city);
+      if (
+        currentMonth === now.getMonth() &&
+        currentYear === now.getFullYear()
+      ) {
+        today = now.getDate();
+      }
+    };
+
+    // Update every minute to keep the calendar current
+    const interval = setInterval(updateTime, 60000);
+
+    return () => {
+      clearInterval(interval);
+    };
   });
 
   // Get the actual day of week for compact display
   let actualDayOfWeek = $derived(() => {
-    const now = new Date();
+    const now = getTimeForCity(settings.city);
     return now.getDay();
   });
 
@@ -187,15 +249,12 @@
       days.push(day);
     }
 
-    // Calculate the number of rows needed (weeks)
-    // rowCount = Math.ceil(days.length / 7);
-
     return days;
   }
 
   $effect(() => {
     // Update today when the component mounts or date changes
-    const now = new Date();
+    const now = getTimeForCity(settings.city);
     if (now.getMonth() === currentMonth && now.getFullYear() === currentYear) {
       today = now.getDate();
     } else {
@@ -204,17 +263,16 @@
   });
 
   let calendarDays = $derived(generateCalendarDays());
-  let rowCount = $derived(Math.ceil(calendarDays.length / 7)); // 6 rows for the calendar
+  let rowCount = $derived(Math.ceil(calendarDays.length / 7));
 </script>
 
 <div
-  class="calendar-widget draggable-widget"
-  class:compact={shouldShowCompact}
-  style={`grid-area: ${currentGridRow} / ${currentGridCol} / ${currentGridRow + currentSpanY} / ${currentGridCol + currentSpanX};
-      --rowCount: ${rowCount};`}
+  {id}
   use:draggable={draggableOptions}
   use:resizable={resizableOptions}
-  {id}
+  class="calendar-widget draggable-widget"
+  class:compact={shouldShowCompact}
+  style="grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow + currentSpanY} / {currentGridCol + currentSpanX}; --rowCount: {rowCount};"
 >
   <div class="calendar-container">
     {#if shouldShowCompact}
@@ -222,10 +280,10 @@
       <div class="compact-calendar">
         <div class="compact-header">
           <div class="compact-month">
-            {shortMonthNames[new Date().getMonth()]}
+            {localeData().shortMonthNames[new Date().getMonth()]}
           </div>
           <div class="compact-day-name">
-            {shortDayNames[actualDayOfWeek()]}
+            {localeData().shortDayNames[actualDayOfWeek()]}
           </div>
         </div>
         <div class="compact-date">{actualToday()}</div>
@@ -234,7 +292,7 @@
       <!-- Full 2x2 layout -->
       <!-- Month Header -->
       <div class="month-header">
-        <h2 class="month-name">{shortMonthNames[currentMonth]}. {currentYear}</h2>
+        <h2 class="month-name">{localeData().shortMonthNames[currentMonth]}. {currentYear}</h2>
         <div class="month-controls">
           <button class="prev-month" on:click={prevMonth}>
             <ChevronLeft size="16" />
@@ -250,7 +308,7 @@
 
       <!-- Day Headers -->
       <div class="day-headers">
-        {#each dayAbbreviations as day}
+        {#each localeData().dayAbbreviations as day}
           <div class="day-header">{day}</div>
         {/each}
       </div>

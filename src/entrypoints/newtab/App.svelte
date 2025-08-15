@@ -61,6 +61,27 @@
           });
         }}
       />
+    {:else if widget.type === "calendar"}
+      <Calendar
+        id={widget.id}
+        pos={widget.pos}
+        span={widget.span}
+        settings={widget.settings}
+        isDraggable={settingStoreValue.options.isDraggable}
+        isResizable={settingStoreValue.options.isResizable}
+        onDragEnd={(newRow, newCol) => {
+          settingStore.update((store) => {
+            store.widgets[widgetId].pos = { row: newRow, col: newCol };
+            return store;
+          });
+        }}
+        onResize={(newSpan) => {
+          settingStore.update((store) => {
+            store.widgets[widgetId].span = newSpan;
+            return store;
+          });
+        }}
+      />
     {/if}
   {/each}
 </WidgetGrid>
