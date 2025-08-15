@@ -15,8 +15,6 @@
   });
 
   let settingStoreValue = $derived($settingStore);
-
-  // getRandomImageFromSubreddit().then(console.log).catch(console.error);
 </script>
 
 <WidgetGrid gridGap={10} gridPadding={40} showGrid={true} minWidgetSize={120}>

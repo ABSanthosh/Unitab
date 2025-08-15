@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 import { SupportedCityName } from "../utils/timezone";
+import { catStoreActions } from "./catStore";
 
 type Widget = {
   id: string;
@@ -139,6 +140,25 @@ settingStore.subscribe((value) => {
     window.localStorage.setItem("settingStore", JSON.stringify(value));
   }, 1000);
 });
+
+// Cleanup function for when widgets are removed
+function cleanupWidget(widgetId: string, widgetType: string) {
+  if (widgetType === "cat") {
+    catStoreActions.removeCatImage(widgetId);
+  }
+}
+
+// Helper function to remove a widget and cleanup its resources
+export function removeWidget(widgetId: string) {
+  settingStore.update((store) => {
+    const widget = store.widgets[widgetId];
+    if (widget) {
+      cleanupWidget(widgetId, widget.type);
+      delete store.widgets[widgetId];
+    }
+    return store;
+  });
+}
 
 export default settingStore;
 
