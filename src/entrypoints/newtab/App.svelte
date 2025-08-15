@@ -22,8 +22,8 @@
     document.body.style.backgroundImage = `url(${value.options.wallpaper})`;
   });
 
-  const drag = $state(false);
-  const resize = $state(false);
+  const drag = $state(true);
+  const resize = $state(true);
 </script>
 
 <WidgetGrid

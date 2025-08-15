@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { draggable, type DraggableOptions } from "../../../actions/draggable";
-  import { resizable, type ResizableOptions } from "../../../actions/resizable";
+  import { draggable } from "../../../actions/draggable";
+  import { resizable } from "../../../actions/resizable";
 
   let time = $state(new Date());
 
@@ -14,6 +14,10 @@
     resizable?: boolean;
     id: string;
   }
+
+  // settings
+  // Show numbers
+  // Show seconds hand
 
   let {
     id,
@@ -72,31 +76,29 @@
 </script>
 
 <div
-  class="AnalogClock BlurBG draggable-widget"
+  {id}
   use:draggable={draggableOptions}
   use:resizable={resizableOptions}
-  {id}
-  style="
-    grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow +
-    currentSpanY} / {currentGridCol + currentSpanX};
-  "
+  class="AnalogClock BlurBG draggable-widget"
+  style="grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow +
+    currentSpanY} / {currentGridCol + currentSpanX};"
+  data-type={currentSpanX === 1 && currentSpanY === 1 ? "small" : "large"}
 >
   <svg viewBox="-50 -50 100 100">
     <circle class="AnalogClock__face" r="48" />
     {#each [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55] as minute}
       <line
-        class="AnalogClock__major"
-        y1="39"
         y2="45"
+        class="AnalogClock__major"
         transform="rotate({30 * minute})"
+        y1={currentSpanX === 1 && currentSpanY === 1 ? "39" : "42"}
       />
       {#if !(currentSpanX === 1 && currentSpanY === 1)}
         <text
-          x={34 * Math.sin((Math.PI / 30) * minute)}
-          y={-34 * Math.cos((Math.PI / 30) * minute) + 2}
           fill="black"
-          font-size="6px"
           text-anchor="middle"
+          x={36 * Math.sin((Math.PI / 30) * minute)}
+          y={-36 * Math.cos((Math.PI / 30) * minute) + 3}
         >
           {#if minute == 0}
             12
@@ -108,9 +110,9 @@
 
       {#each [1, 2, 3, 4] as offset}
         <line
-          class="AnalogClock__minor"
           y1="42"
           y2="45"
+          class="AnalogClock__minor"
           transform="rotate({6 * (minute + offset)})"
         />
       {/each}
@@ -146,42 +148,41 @@
 
   .AnalogClock {
     // Ensure component fits within grid system
-    width: 100%;
-    height: 100%;
-    min-width: 120px;
-    min-height: 120px;
+    padding: 8px;
+    @include box();
     max-width: 100%;
     max-height: 100%;
+    min-width: 120px;
+    min-height: 120px;
     @include make-flex();
-    padding: 8px;
     box-sizing: border-box;
 
     // Ensure proper positioning within grid
-    position: relative;
     overflow: hidden;
+    position: relative;
 
     // Responsive padding based on size
-    @media (max-width: 768px) {
+    @include respondAt(768px) {
       padding: 6px;
     }
-
-    @media (max-width: 480px) {
+    @include respondAt(480px) {
       padding: 4px;
     }
 
     & > svg {
-      width: 100%;
-      height: 100%;
+      @include box();
+      aspect-ratio: 1;
       max-width: 100%;
       max-height: 100%;
-      aspect-ratio: 1;
 
       & > circle {
+        // TODO: Theme
         fill: #fff;
       }
     }
 
     &__face {
+      // TODO: Theme
       fill: white;
     }
 
@@ -191,17 +192,28 @@
       stroke-linejoin: round;
     }
 
+    &[data-type="small"] {
+      .AnalogClock__major {
+        stroke-width: 1.5;
+      }
+      .AnalogClock__minor {
+        stroke-width: 0.8;
+      }
+    }
+
     &__major {
       stroke: #333;
       stroke-width: 1;
     }
 
     text {
-      font-family: "Lora", serif;
-      font-size: clamp(4px, 1.2vw, 6px);
+      // TODO: Theme
+      font-weight: 600;
+      font-size: clamp(4px, 1.2vw, 8px);
     }
 
     &__minor {
+      // TODO: Theme
       stroke: #999;
       stroke-width: 0.5;
     }
@@ -232,9 +244,9 @@
       }
       &--line {
         stroke-width: 3.5;
+        stroke: #111111;
         stroke-linecap: round;
         stroke-linejoin: round;
-        stroke: #111111;
         filter: drop-shadow(0px 0px 2px rgb(0 0 0 / 0.4));
       }
     }
@@ -242,9 +254,9 @@
     &__second {
       &--line {
         stroke-width: 1;
+        stroke: #ff0000;
         stroke-linecap: round;
         stroke-linejoin: round;
-        stroke: #ff0000;
         filter: drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.2));
       }
 
@@ -255,7 +267,7 @@
     }
 
     // Responsive adjustments for smaller screens
-    @media (max-width: 768px) {
+    @include respondAt(768px) {
       &__hour--line,
       &__minute--line {
         stroke-width: 3;
@@ -270,7 +282,7 @@
       }
     }
 
-    @media (max-width: 480px) {
+    @include respondAt(480px) {
       &__hour--line,
       &__minute--line {
         stroke-width: 2.5;
