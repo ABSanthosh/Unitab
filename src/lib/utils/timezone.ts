@@ -30,7 +30,7 @@ export const SUPPORTED_CITIES: CityTimezone[] = [
   { name: "Istanbul", timezone: "Europe/Istanbul", country: "Turkey", abbr: "IST" },
   
   // Asia
-  { name: "Tokyo", timezone: "Asia/Tokyo", country: "Japan", abbr: "NRT" },
+  { name: "Tokyo", timezone: "Asia/Tokyo", country: "Japan", abbr: "TOK" },
   { name: "Shanghai", timezone: "Asia/Shanghai", country: "China", abbr: "SHA" },
   { name: "Hong Kong", timezone: "Asia/Hong_Kong", country: "Hong Kong", abbr: "HKG" },
   { name: "Singapore", timezone: "Asia/Singapore", country: "Singapore", abbr: "SIN" },

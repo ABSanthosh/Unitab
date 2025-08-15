@@ -36,13 +36,13 @@
 
   let {
     id,
+    pos,
+    span,
     onResize,
     settings,
     onDragEnd,
     isResizable,
     isDraggable,
-    span = { x: 2, y: 2 },
-    pos = { row: 1, col: 1 },
   }: Props = $props();
 
   // Current position and size state

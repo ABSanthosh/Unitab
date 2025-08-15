@@ -55,9 +55,7 @@
   let currentSpanY = $state(span.y);
 
   // Get timezone offset and create city abbreviation
-  let timezoneOffset = $derived(
-    settings.city ? getTimezoneOffset(settings.city) : 0
-  );
+  let timezoneOffset = $derived(getTimezoneOffset(settings.city));
   let cityAbbr = $derived(getCityAbbreviation(settings.city));
   let offsetDisplay = $derived(
     timezoneOffset >= 0 ? `+${timezoneOffset}` : `${timezoneOffset}`

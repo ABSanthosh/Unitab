@@ -76,7 +76,6 @@ const defaultStore: SettingStore = {
       settings: {
         showNumbers: true,
         showSecondsHand: true,
-        city: "New York",
       },
     },
     "flip-clock-1": {
@@ -86,7 +85,6 @@ const defaultStore: SettingStore = {
       span: { x: 2, y: 1 },
       settings: {
         showSeconds: true,
-        city: "Tokyo",
       },
     },
     "calendar-1": {
