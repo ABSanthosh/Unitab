@@ -33,15 +33,14 @@
   gridPadding={40}
   showGrid={true}
 >
-  <!-- FlipClock widget spanning 2 columns -->
-  <FlipClock
+  <!-- <FlipClock
     gridRow={1}
     gridCol={1}
     gridSpanX={2}
     gridSpanY={1}
     draggable={drag}
     resizable={resize}
-  />
+  /> -->
 
   <AnalogClock
     gridRow={1}
@@ -53,50 +52,29 @@
     id="analog-clock"
   />
 
-  <!-- Test widgets to demonstrate dragging and resizing -->
-  <TestWidget
-    gridRow={1}
-    gridCol={5}
+  <AnalogClock id="local-clock" />
+
+  <AnalogClock id="ny-clock" city="New York" gridCol={3} />
+
+  <AnalogClock id="london-clock" city="London" gridCol={5} />
+
+  <AnalogClock id="tokyo-clock" city="Tokyo" gridRow={3} />
+
+  <AnalogClock
+    id="small-clock"
+    city="Sydney"
     gridSpanX={1}
     gridSpanY={1}
-    draggable={drag}
-    resizable={resize}
-    allowedSizes={["1x1", "2x2", "3x3", "2x1", "1x2"]}
-    title="Widget A"
-    color="#f59e0b"
-  />
-
-  <TestWidget
-    gridRow={2}
-    gridCol={2}
-    gridSpanX={1}
-    gridSpanY={1}
-    draggable={drag}
-    resizable={resize}
-    allowedSizes={["1x1", "2x2", "3x3", "2x1", "1x2"]}
-    title="Widget B"
-    color="#10b981"
-  />
-
-  <TestWidget
     gridRow={3}
-    gridCol={1}
-    gridSpanX={2}
-    gridSpanY={1}
-    draggable={drag}
-    resizable={resize}
-    allowedSizes={["1x1", "2x2", "3x3", "2x1", "1x2", "3x1"]}
-    title="Wide Widget"
-    color="#8b5cf6"
+    gridCol={3}
   />
 
-  <!-- Calendar widget -->
-  <Calendar
+  <!-- <Calendar
     gridRow={2}
     gridCol={5}
     gridSpanX={2}
     gridSpanY={2}
     draggable={drag}
     resizable={resize}
-  />
+  /> -->
 </WidgetGrid>

@@ -2,6 +2,12 @@
   import { onMount } from "svelte";
   import { draggable } from "../../../actions/draggable";
   import { resizable } from "../../../actions/resizable";
+  import {
+    getTimeForCity,
+    getTimezoneOffset,
+    getCityAbbreviation,
+    type SupportedCityName,
+  } from "../../../utils/timezone";
 
   let time = $state(new Date());
 
@@ -13,6 +19,7 @@
     draggable?: boolean;
     resizable?: boolean;
     id: string;
+    city?: SupportedCityName;
   }
 
   // settings
@@ -27,6 +34,7 @@
     gridSpanY = 2,
     draggable: isDraggable = true,
     resizable: isResizable = true,
+    city,
   }: Props = $props();
 
   // Current position and size state
@@ -52,6 +60,17 @@
   let minutes = $derived(time.getMinutes());
   let seconds = $derived(time.getSeconds());
 
+  // Get timezone offset and create city abbreviation
+  let timezoneOffset = $derived(city ? getTimezoneOffset(city) : 0);
+  let cityAbbr = $derived(getCityAbbreviation(city));
+  let offsetDisplay = $derived(
+    timezoneOffset >= 0 ? `+${timezoneOffset}` : `${timezoneOffset}`
+  );
+
+  // Widget size helpers
+  let isSmallWidget = $derived(currentSpanX === 1 && currentSpanY === 1);
+  let widgetSize = $derived(isSmallWidget ? "small" : "large");
+
   // Handle drag end to update position
   function handleDragEnd(newRow: number, newCol: number) {
     currentGridRow = newRow;
@@ -65,9 +84,14 @@
   }
 
   onMount(() => {
-    const interval = setInterval(() => {
-      time = new Date();
-    }, 1000);
+    const updateTime = () => {
+      time = getTimeForCity(city);
+    };
+
+    // Initial update
+    updateTime();
+
+    const interval = setInterval(updateTime, 1000);
 
     return () => {
       clearInterval(interval);
@@ -82,7 +106,7 @@
   class="AnalogClock BlurBG draggable-widget"
   style="grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow +
     currentSpanY} / {currentGridCol + currentSpanX};"
-  data-type={currentSpanX === 1 && currentSpanY === 1 ? "small" : "large"}
+  data-size={widgetSize}
 >
   <svg viewBox="-50 -50 100 100">
     <circle class="AnalogClock__face" r="48" />
@@ -91,9 +115,9 @@
         y2="45"
         class="AnalogClock__major"
         transform="rotate({30 * minute})"
-        y1={currentSpanX === 1 && currentSpanY === 1 ? "39" : "42"}
+        y1={isSmallWidget ? "39" : "42"}
       />
-      {#if !(currentSpanX === 1 && currentSpanY === 1)}
+      {#if !isSmallWidget}
         <text
           fill="black"
           text-anchor="middle"
@@ -117,6 +141,16 @@
         />
       {/each}
     {/each}
+
+    <!-- City name and timezone offset in center -->
+    {#if city}
+      <text x="0" y="-12" text-anchor="middle" class="AnalogClock__city-text">
+        {cityAbbr}
+      </text>
+      <text x="0" y="20" text-anchor="middle" class="AnalogClock__offset-text">
+        {offsetDisplay}
+      </text>
+    {/if}
 
     <!-- hour hand -->
     <g class="AnalogClock__hour" transform="rotate({30 * hours + minutes / 2})">
@@ -192,12 +226,27 @@
       stroke-linejoin: round;
     }
 
-    &[data-type="small"] {
+    &[data-size="small"] {
       .AnalogClock__major {
         stroke-width: 1.5;
       }
       .AnalogClock__minor {
         stroke-width: 0.8;
+      }
+      .AnalogClock__city-text {
+        font-size: 12px;
+      }
+      .AnalogClock__offset-text {
+        font-size: 12px;
+      }
+    }
+
+    &[data-size="large"] {
+      .AnalogClock__city-text {
+        font-size: 10px;
+      }
+      .AnalogClock__offset-text {
+        font-size: 8px;
       }
     }
 
@@ -210,6 +259,22 @@
       // TODO: Theme
       font-weight: 600;
       font-size: clamp(4px, 1.2vw, 8px);
+    }
+
+    &__city-text {
+      fill: #8e8e93;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        sans-serif;
+    }
+
+    &__offset-text {
+      fill: #8e8e93;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
     }
 
     &__minor {
@@ -280,6 +345,24 @@
       &__minor {
         stroke-width: 0.4;
       }
+
+      &[data-size="large"] {
+        .AnalogClock__city-text {
+          font-size: 7px;
+        }
+        .AnalogClock__offset-text {
+          font-size: 5px;
+        }
+      }
+
+      &[data-size="small"] {
+        .AnalogClock__city-text {
+          font-size: 5px;
+        }
+        .AnalogClock__offset-text {
+          font-size: 3.5px;
+        }
+      }
     }
 
     @include respondAt(480px) {
@@ -298,6 +381,24 @@
 
       &__second--line {
         stroke-width: 0.8;
+      }
+
+      &[data-size="large"] {
+        .AnalogClock__city-text {
+          font-size: 6px;
+        }
+        .AnalogClock__offset-text {
+          font-size: 4.5px;
+        }
+      }
+
+      &[data-size="small"] {
+        .AnalogClock__city-text {
+          font-size: 4px;
+        }
+        .AnalogClock__offset-text {
+          font-size: 3px;
+        }
       }
     }
   }

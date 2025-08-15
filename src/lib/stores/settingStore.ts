@@ -1,5 +1,25 @@
 import { writable } from "svelte/store";
 
+type Widget = {
+  id: string;
+  pos: {
+    row: number;
+    col: number;
+  };
+};
+
+type AnalogClockWidget = Widget & {
+  type: "analog-clock";
+  span: {
+    x: 1 | 2;
+    y: 1 | 2;
+  };
+  settings: {
+    showNumbers: boolean;
+    showSecondsHand: boolean;
+  };
+};
+
 const defaultStore = {
   options: {
     reordering: true,
