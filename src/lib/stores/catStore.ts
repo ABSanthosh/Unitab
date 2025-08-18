@@ -1,5 +1,6 @@
 import { writable, derived } from "svelte/store";
 import { catEngine, type CatImage } from "../utils/CatEngine";
+import { Magazine, type MagazineConfig } from "../utils/Magazine";
 
 interface CatImageCache {
   [widgetId: string]: {
@@ -14,6 +15,11 @@ interface CatStore {
   cache: CatImageCache;
   globalLoading: boolean;
   lastFetchTime: number;
+  magazine: {
+    count: number;
+    lastUpdate: number;
+    data: CatImage[]; // Store magazine data directly in the store
+  };
 }
 
 // Cache expiration time (30 minutes)
@@ -23,32 +29,109 @@ const defaultCatStore: CatStore = {
   cache: {},
   globalLoading: false,
   lastFetchTime: 0,
+  magazine: {
+    count: 0,
+    lastUpdate: 0,
+    data: [],
+  },
 };
 
 const STORAGE_KEY = "catStoreV1";
+const OLD_MAGAZINE_KEY = "catImageMagazineV1";
+
+// Migrate old magazine data if it exists
+function migrateOldMagazineData(): CatImage[] {
+  try {
+    const oldMagazineData = localStorage.getItem(OLD_MAGAZINE_KEY);
+    if (oldMagazineData) {
+      const parsed = JSON.parse(oldMagazineData);
+      if (Array.isArray(parsed)) {
+        // Clean up old key
+        localStorage.removeItem(OLD_MAGAZINE_KEY);
+        console.info("Migrated cat magazine data from old storage key");
+        return parsed.filter(
+          (x) =>
+            x &&
+            typeof x.title === "string" &&
+            typeof x.author === "string" &&
+            typeof x.postUrl === "string" &&
+            typeof x.subreddit === "string" &&
+            (typeof x.imageUrl === "string" || typeof x.imageUrl === "undefined")
+        ).map(item => ({
+          ...item,
+          source: item.subreddit || item.source || "reddit", // Add source field if missing
+        }));
+      }
+    }
+  } catch (error) {
+    console.warn("Failed to migrate old magazine data:", error);
+  }
+  return [];
+}
 
 // Load initial state from localStorage
 function loadFromStorage(): CatStore {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return defaultCatStore;
+    if (!stored) {
+      // If no store data exists, try to migrate old magazine data
+      const migratedMagazineData = migrateOldMagazineData();
+      return {
+        ...defaultCatStore,
+        magazine: {
+          count: migratedMagazineData.length,
+          lastUpdate: Date.now(),
+          data: migratedMagazineData,
+        },
+      };
+    }
     
     const parsed = JSON.parse(stored);
     // Validate the structure
     if (typeof parsed === 'object' && parsed.cache && typeof parsed.cache === 'object') {
+      // Check if we need to migrate magazine data
+      let magazineData = Array.isArray(parsed.magazine?.data) ? parsed.magazine.data : [];
+      
+      // If no magazine data in store but old magazine key exists, migrate it
+      if (magazineData.length === 0) {
+        const migratedMagazineData = migrateOldMagazineData();
+        magazineData = migratedMagazineData;
+      }
+      
       return {
         cache: parsed.cache || {},
         globalLoading: false, // Never persist loading state
         lastFetchTime: parsed.lastFetchTime || 0,
+        magazine: {
+          count: parsed.magazine?.count || magazineData.length,
+          lastUpdate: parsed.magazine?.lastUpdate || 0,
+          data: magazineData,
+        },
       };
     }
   } catch (error) {
     console.warn("Failed to load cat store from localStorage:", error);
   }
-  return defaultCatStore;
+  
+  // Fallback: try to migrate old data
+  const migratedMagazineData = migrateOldMagazineData();
+  return {
+    ...defaultCatStore,
+    magazine: {
+      count: migratedMagazineData.length,
+      lastUpdate: Date.now(),
+      data: migratedMagazineData,
+    },
+  };
 }
 
 const catStore = writable<CatStore>(loadFromStorage());
+
+// Initialize the magazine with stored data
+catStore.subscribe((value) => {
+  // Sync magazine data with catEngine
+  catEngine.setMagazineData(value.magazine.data);
+});
 
 let saveTimer: NodeJS.Timeout | null = null;
 
@@ -60,6 +143,7 @@ catStore.subscribe((value) => {
       const toSave = {
         cache: value.cache,
         lastFetchTime: value.lastFetchTime,
+        magazine: value.magazine,
         // Don't save globalLoading as it should always start as false
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -74,6 +158,9 @@ export const catImageStates = derived(catStore, ($catStore) => $catStore.cache);
 
 // Derived store for global loading state
 export const globalCatLoading = derived(catStore, ($catStore) => $catStore.globalLoading);
+
+// Derived store for magazine status
+export const catMagazineStatus = derived(catStore, ($catStore) => $catStore.magazine);
 
 // Helper function to check if cached image is expired
 function isCacheExpired(timestamp: number): boolean {
@@ -119,6 +206,16 @@ export const catStoreActions = {
               error: undefined,
             };
             store.lastFetchTime = Date.now();
+            
+            // Update magazine status
+            const magazineStatus = catEngine.getMagazineStatus();
+            const magazineData = catEngine.getMagazineData();
+            store.magazine = {
+              count: magazineStatus.count,
+              lastUpdate: Date.now(),
+              data: magazineData,
+            };
+            
             store.globalLoading = Object.values(store.cache).some(item => item.isLoading);
             return store;
           });
@@ -164,6 +261,11 @@ export const catStoreActions = {
     catStore.update(store => {
       store.cache = {};
       store.globalLoading = false;
+      store.magazine = {
+        count: 0,
+        lastUpdate: Date.now(),
+        data: [],
+      };
       return store;
     });
     // Also clear the magazine cache
@@ -207,6 +309,18 @@ export const catStoreActions = {
     try {
       const promises = Array.from({ length: count }, () => catEngine.getNextCatFromMagazine());
       await Promise.all(promises);
+      
+      // Update magazine status after preloading
+      catStore.update(store => {
+        const magazineStatus = catEngine.getMagazineStatus();
+        const magazineData = catEngine.getMagazineData();
+        store.magazine = {
+          count: magazineStatus.count,
+          lastUpdate: Date.now(),
+          data: magazineData,
+        };
+        return store;
+      });
     } catch (error) {
       console.warn("Failed to preload cat images:", error);
     } finally {
@@ -218,10 +332,56 @@ export const catStoreActions = {
   },
 
   /**
-   * Get magazine status for debugging
+   * Clear only the magazine cache (not widget caches)
+   */
+  clearMagazine() {
+    catEngine.clearMagazine();
+    catStore.update(store => {
+      store.magazine = {
+        count: 0,
+        lastUpdate: Date.now(),
+        data: [],
+      };
+      return store;
+    });
+  },
+
+  /**
+   * Get comprehensive magazine status including both engine status and store status
    */
   getMagazineStatus() {
-    return catEngine.getMagazineStatus();
+    const engineStatus = catEngine.getMagazineStatus();
+    
+    // Also get current store magazine status
+    let storeStatus = { count: 0, lastUpdate: 0 };
+    catStore.subscribe(store => {
+      storeStatus = store.magazine;
+    })(); // Immediately unsubscribe after reading
+
+    return {
+      engine: engineStatus,
+      store: storeStatus,
+      combined: {
+        ...engineStatus,
+        storeLastUpdate: storeStatus.lastUpdate,
+      }
+    };
+  },
+
+  /**
+   * Force refresh magazine status from engine
+   */
+  refreshMagazineStatus() {
+    catStore.update(store => {
+      const magazineStatus = catEngine.getMagazineStatus();
+      const magazineData = catEngine.getMagazineData();
+      store.magazine = {
+        count: magazineStatus.count,
+        lastUpdate: Date.now(),
+        data: magazineData,
+      };
+      return store;
+    });
   },
 };
 

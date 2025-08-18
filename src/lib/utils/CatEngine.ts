@@ -1,9 +1,9 @@
-export interface CatImage {
-  title: string;
-  author: string;
-  postUrl: string;
-  imageUrl: string | undefined;
+import { Magazine, type ImageItem, type MagazineConfig } from "./Magazine";
+
+export interface CatImage extends ImageItem {
   subreddit: string;
+  // Alias source to subreddit for backward compatibility
+  source: string;
 }
 
 interface RedditListingResponse {
@@ -35,13 +35,18 @@ export class CatEngine {
     "CatsInHats",
   ];
 
-  private readonly magazineKey = "catImageMagazineV1";
-  private readonly targetPreload = 5; // how many to keep in magazine
-  private readonly initialFill = 5; // on cold start
-  private readonly preloadLookahead = 3; // how many upcoming URLs to warm
+  private readonly magazine: Magazine<CatImage>;
 
-  // Track which URLs we already asked the browser to preload, to avoid churn
-  private readonly preloaded = new Map<string, HTMLImageElement>();
+  constructor() {
+    const magazineConfig: MagazineConfig = {
+      // No storageKey - the catStore will manage magazine data
+      targetPreload: 5, // how many to keep in magazine
+      initialFill: 5, // on cold start
+      preloadLookahead: 3, // how many upcoming URLs to warm
+    };
+
+    this.magazine = new Magazine(magazineConfig, () => this.fetchOneSafe());
+  }
 
   /**
    * Fetch a random cat image from Reddit
@@ -78,6 +83,7 @@ export class CatEngine {
       postUrl: `https://reddit.com${pick.permalink}`,
       imageUrl: pick.url_overridden_by_dest || pick.url,
       subreddit: pick.subreddit,
+      source: pick.subreddit, // Set source to subreddit for Magazine compatibility
       author: pick.author,
     };
   }
@@ -99,172 +105,39 @@ export class CatEngine {
   }
 
   /**
-   * Read magazine from localStorage
-   */
-  private readMagazine(): CatImage[] {
-    try {
-      const raw = localStorage.getItem(this.magazineKey);
-      if (!raw) return [];
-      const arr = JSON.parse(raw);
-      if (!Array.isArray(arr)) return [];
-      // Basic validation
-      return arr.filter(
-        (x) =>
-          x &&
-          typeof x.title === "string" &&
-          typeof x.author === "string" &&
-          typeof x.postUrl === "string" &&
-          typeof x.subreddit === "string" &&
-          (typeof x.imageUrl === "string" || typeof x.imageUrl === "undefined")
-      );
-    } catch {
-      return [];
-    }
-  }
-
-  /**
-   * Write magazine to localStorage
-   */
-  private writeMagazine(arr: CatImage[]) {
-    try {
-      localStorage.setItem(this.magazineKey, JSON.stringify(arr));
-    } catch {
-      // ignore quota or serialization errors
-    }
-  }
-
-  /**
-   * Fill magazine with N images
-   */
-  private async fillMagazine(n: number): Promise<CatImage[]> {
-    const results: CatImage[] = [];
-    for (let i = 0; i < n; i++) {
-      const img = await this.fetchOneSafe();
-      results.push(img);
-    }
-    return results;
-  }
-
-  /**
-   * Top up the magazine asynchronously to maintain preload count
-   */
-  private async topUpAsync() {
-    try {
-      // After popping one, we want at least targetPreload items ready.
-      let mag = this.readMagazine();
-      const need = Math.max(0, this.targetPreload - mag.length);
-      for (let i = 0; i < need; i++) {
-        const img = await this.fetchOneSafe();
-        mag = this.readMagazine(); // re-read in case other tabs updated it
-        mag.push(img);
-        this.writeMagazine(mag);
-      }
-      // After topping up, warm the cache for upcoming images
-      this.preloadUpcoming();
-    } catch {
-      // Swallow errors; UX still shows the immediately returned image
-    }
-  }
-
-  /**
-   * Preload next few images by creating Image objects to warm HTTP cache.
-   * This is a best-effort, zero-maintenance preloader.
-   */
-  private preloadUpcoming() {
-    const mag = this.readMagazine();
-    const nextUrls = mag
-      .slice(0, this.preloadLookahead)
-      .map((m) => m.imageUrl)
-      .filter((u): u is string => !!u);
-
-    // Remove references for URLs that are no longer in our lookahead
-    for (const [url, img] of this.preloaded) {
-      if (!nextUrls.includes(url)) {
-        // Drop our reference; the browser cache retains the resource
-        img.onload = null;
-        img.onerror = null;
-        this.preloaded.delete(url);
-      }
-    }
-
-    // Add new preloaders for unseen URLs
-    for (const url of nextUrls) {
-      if (this.preloaded.has(url)) continue;
-      try {
-        const img = new Image();
-        img.decoding = "async";
-        img.loading = "eager";
-        // Optional: avoid referrer leakage; adjust if you need referers.
-        img.referrerPolicy = "no-referrer";
-        img.src = url;
-        // No need to attach to DOM; request starts immediately.
-        this.preloaded.set(url, img);
-      } catch {
-        // ignore
-      }
-    }
-  }
-
-  /**
    * Get the next cat image from the magazine
    * Returns immediately from cache if available, otherwise fetches new images
    */
   async getNextCatFromMagazine(): Promise<CatImage> {
-    let mag = this.readMagazine();
-
-    if (mag.length === 0) {
-      // Cold start: fetch initial fill, store, return first
-      const filled = await this.fillMagazine(this.initialFill);
-      this.writeMagazine(filled);
-      const [first, ...rest] = filled;
-      this.writeMagazine(rest);
-      // Top up and start preloading upcoming images
-      void this.topUpAsync(); // fire-and-forget
-      // Warm cache for what's currently in rest
-      this.preloadUpcoming();
-      return first;
-    }
-
-    // Pop first and return immediately
-    const next = mag.shift()!;
-    this.writeMagazine(mag);
-
-    // Preload now for remaining magazine, then top up in background
-    this.preloadUpcoming();
-    void this.topUpAsync();
-
-    return next;
+    return this.magazine.getNext();
   }
 
   /**
    * Clear the magazine cache
    */
   clearMagazine() {
-    try {
-      localStorage.removeItem(this.magazineKey);
-    } catch {
-      // ignore errors
-    }
-    // Drop preloader references
-    for (const [, img] of this.preloaded) {
-      img.onload = null;
-      img.onerror = null;
-    }
-    this.preloaded.clear();
+    this.magazine.clear();
   }
 
   /**
    * Get magazine status (for debugging)
    */
   getMagazineStatus() {
-    const mag = this.readMagazine();
-    return {
-      count: mag.length,
-      targetPreload: this.targetPreload,
-      needsRefill: mag.length < this.targetPreload,
-      lookahead: this.preloadLookahead,
-      preloadedCount: this.preloaded.size,
-    };
+    return this.magazine.getStatus();
+  }
+
+  /**
+   * Set magazine data (for external storage management)
+   */
+  setMagazineData(data: CatImage[]) {
+    this.magazine.setMagazineData(data);
+  }
+
+  /**
+   * Get magazine data (for external storage management)
+   */
+  getMagazineData(): CatImage[] {
+    return this.magazine.getMagazineData();
   }
 }
 

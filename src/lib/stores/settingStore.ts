@@ -133,17 +133,25 @@ const defaultStore: SettingStore = {
       settings: {},
     },
   },
-  wallpapers: [
-    "/assets/wallpapers/adwaita-d.jpg",
-    "/assets/wallpapers/adwaita-l.jpg",
-    "/assets/wallpapers/blobs-d.svg",
-    "/assets/wallpapers/blobs-l.svg",
-    "/assets/wallpapers/drool-d.svg",
-    "/assets/wallpapers/drool-l.svg",
-    "/assets/wallpapers/fold-d.jpg",
-    "/assets/wallpapers/fold-l.jpg",
-    "/assets/wallpapers/ventura-d.jpg",
-  ],
+  wallpapers: {
+    nasa: {
+      apiKey: "DEMO_KEY", 
+      types: {
+        "apod": {}
+      }
+    },
+    presets: [
+      "/assets/wallpapers/adwaita-d.jpg",
+      "/assets/wallpapers/adwaita-l.jpg",
+      "/assets/wallpapers/blobs-d.svg",
+      "/assets/wallpapers/blobs-l.svg",
+      "/assets/wallpapers/drool-d.svg",
+      "/assets/wallpapers/drool-l.svg",
+      "/assets/wallpapers/fold-d.jpg",
+      "/assets/wallpapers/fold-l.jpg",
+      "/assets/wallpapers/ventura-d.jpg",
+    ],
+  },
 };
 
 const settingStore = writable<SettingStore>(

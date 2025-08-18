@@ -40,6 +40,7 @@
     subreddit: "",
     postUrl: "",
     author: "",
+    source: "",
   });
 
   // Get the cached image state for this widget
@@ -123,6 +124,7 @@
         subreddit: "",
         postUrl: "",
         author: "",
+        source: "",
       };
     }
   });
