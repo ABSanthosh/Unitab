@@ -1,5 +1,3 @@
-<svelte:options runes={true} />
-
 <script lang="ts">
   import settingStore from "../../lib/stores/settingStore";
   import WidgetGrid from "../../lib/components/WidgetGrid.svelte";
@@ -8,16 +6,46 @@
   import FlipClock from "../../lib/components/widgets/clock/FlipClock.svelte";
   import AnalogClock from "@/lib/components/widgets/clock/AnalogClock.svelte";
   import Cat from "../../lib/components/widgets/Cat.svelte";
-  import { get } from "svelte/store";
+  import ContextMenu from "@/lib/components/ContextMenu.svelte";
 
-  settingStore.subscribe((value) => {
+  settingStore.subscribe((value: any) => {
     document.body.style.backgroundImage = `url(${value.options.wallpaper})`;
   });
 
   let settingStoreValue = $derived($settingStore);
 </script>
 
-<WidgetGrid gridGap={10} gridPadding={40} showGrid={true} minWidgetSize={120}>
+<ContextMenu
+  menuItems={[
+    {
+      name: "settings",
+      onClick: () => {},
+      displayText: "Settings",
+    },
+  ]}
+/>
+<!-- <div style="display: flex; flex-direction: row; gap: 10px;">
+  <input
+    type="checkbox"
+    checked={settingStoreValue.options.isDraggable}
+    onchange={() =>
+      settingStore.update((store) => {
+        store.options.isDraggable = !store.options.isDraggable;
+        return store;
+      })}
+  />
+  <input
+    type="checkbox"
+    checked={settingStoreValue.options.isResizable}
+    onchange={() =>
+      settingStore.update((store) => {
+        store.options.isResizable = !store.options.isResizable;
+        return store;
+      })}
+  />
+</div> -->
+
+<WidgetGrid gridGap={10} gridPadding={40} showGrid={false} minWidgetSize={120}>
   {#each Object.keys(settingStoreValue.widgets) as widgetId}
     {@const widget = settingStoreValue.widgets[widgetId]}
     {#if widget.type === "analog-clock"}

@@ -135,7 +135,7 @@
     width: 100vw;
     height: 100vh;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 40px;
     box-sizing: border-box;
