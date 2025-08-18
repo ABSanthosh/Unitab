@@ -62,14 +62,29 @@ type CatWidget = Widget & {
   };
 };
 
+type WallpaperTypes =
+  | {
+      type: "preset";
+      url: string;
+    }
+  | {
+      type: "nasa";
+      category: "apod" | "earth" | "mars" | "moon";
+      apiKey: string;
+      url: string;
+    };
+
 interface SettingStore {
   options: {
     isDraggable: boolean;
     isResizable: boolean;
-    wallpaper: string;
+    wallpaper: WallpaperTypes;
     showGrid: boolean;
   };
-  widgets: Record<string, AnalogClockWidget | FlipClockWidget | CalendarWidget | CatWidget>;
+  widgets: Record<
+    string,
+    AnalogClockWidget | FlipClockWidget | CalendarWidget | CatWidget
+  >;
   wallpapers: string[];
 }
 
@@ -77,7 +92,10 @@ const defaultStore: SettingStore = {
   options: {
     isDraggable: true,
     isResizable: true,
-    wallpaper: "/assets/wallpapers/blobs-l.svg",
+    wallpaper: {
+      type: "preset",
+      url: "/assets/wallpapers/adwaita-d.jpg",
+    },
     showGrid: true,
   },
   widgets: {
