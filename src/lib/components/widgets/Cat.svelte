@@ -4,10 +4,17 @@
   import { onMount } from "svelte";
   import type { CatImage } from "@/lib/utils/CatEngine";
   import BlurredSpinner from "../BlurredSpinner.svelte";
-  import { draggable, type DraggableOptions } from "../../actions/draggable";
-  import { resizable, type ResizableOptions } from "../../actions/resizable";
   import type { CatSpan } from "../../stores/settingStore";
+  import settingStore from "../../../lib/stores/settingStore";
   import { catStoreActions, catImageStates } from "../../stores/catStore";
+  import {
+    draggable,
+    type DraggableOptions,
+  } from "../../actions/draggable.svelte";
+  import {
+    resizable,
+    type ResizableOptions,
+  } from "../../actions/resizable.svelte";
 
   interface Props {
     id: string;
@@ -16,23 +23,12 @@
       col: number;
     };
     span: CatSpan;
-    isDraggable?: boolean;
-    isResizable?: boolean;
     settings: Record<string, any>;
     onResize: (newSpan: CatSpan) => void;
     onDragEnd: (newRow: number, newCol: number) => void;
   }
 
-  let {
-    id,
-    pos,
-    span,
-    settings,
-    onResize,
-    onDragEnd,
-    isDraggable = true,
-    isResizable = true,
-  }: Props = $props();
+  let { id, pos, span, settings, onResize, onDragEnd }: Props = $props();
 
   let imgSrc = $state<CatImage>({
     imageUrl: "",
@@ -94,13 +90,11 @@
 
   // Draggable options
   const draggableOptions: DraggableOptions = {
-    disabled: !isDraggable,
     onDragEnd: handleDragEnd,
   };
 
   // Resizable options
   const resizableOptions: ResizableOptions = {
-    disabled: !isResizable,
     allowedSizes: ["1x1", "2x2"],
     onResize: handleResize,
   };
@@ -133,13 +127,14 @@
 <div
   {id}
   class="CatBox BlurBG"
+  use:draggable={draggableOptions}
+  use:resizable={resizableOptions}
+  class:draggable-widget={$settingStore.options.isDraggable}
   style="
     background-image: url({imgSrc.imageUrl});
     grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow +
     currentSpanY} / {currentGridCol + currentSpanX};
   "
-  use:draggable={draggableOptions}
-  use:resizable={resizableOptions}
 >
   {#if !imgSrc.imageUrl}
     <BlurredSpinner zIndex={-2}>
@@ -171,7 +166,7 @@
 
     // Let the widget grid system control dimensions
     @include box();
-    min-height: 120px; // Ensure minimum usability
+    // min-height: 120px; // Ensure minimum usability
 
     &--tooLong {
       z-index: -1;

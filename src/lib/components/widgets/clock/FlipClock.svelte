@@ -4,8 +4,14 @@
   // Ref: https://github.com/ronanru/svelte-flip-clock/blob/main/src/lib/FlipClock.svelte
   // Insp: https://gridfiti.com/wp-content/uploads/2021/08/Gridfiti_Blog_BestiPadWidgets_Clock.jpg
   import { onMount, onDestroy } from "svelte";
-  import { draggable, type DraggableOptions } from "../../../actions/draggable";
-  import { resizable, type ResizableOptions } from "../../../actions/resizable";
+  import {
+    draggable,
+    type DraggableOptions,
+  } from "../../../actions/draggable.svelte";
+  import {
+    resizable,
+    type ResizableOptions,
+  } from "../../../actions/resizable.svelte";
   import {
     getTimeForCity,
     getTimezoneOffset,
@@ -14,6 +20,7 @@
     type SupportedCityName,
   } from "../../../utils/timezone";
   import type { FlipClockSpan } from "../../../stores/settingStore";
+  import settingStore from "../../../../lib/stores/settingStore";
 
   interface Props {
     id: string;
@@ -22,8 +29,6 @@
       col: number;
     };
     span: FlipClockSpan;
-    isDraggable?: boolean;
-    isResizable?: boolean;
     settings: {
       showSeconds: boolean;
       city?: SupportedCityName;
@@ -32,16 +37,7 @@
     onDragEnd: (newRow: number, newCol: number) => void;
   }
 
-  let {
-    id,
-    pos,
-    span,
-    settings,
-    onResize,
-    onDragEnd,
-    isDraggable = true,
-    isResizable = true,
-  }: Props = $props();
+  let { id, pos, span, settings, onResize, onDragEnd }: Props = $props();
 
   let time = $state(new Date());
   let clockContainer: HTMLDivElement;
@@ -79,13 +75,11 @@
 
   // Draggable options
   const draggableOptions: DraggableOptions = {
-    disabled: !isDraggable,
     onDragEnd: handleDragEnd,
   };
 
   // Resizable options
   const resizableOptions: ResizableOptions = {
-    disabled: !isResizable,
     allowedSizes: ["2x1", "2x2"],
     onResize: handleResize,
   };
@@ -221,7 +215,7 @@
   {id}
   bind:this={clockContainer}
   class="FlipClock BlurBG"
-  class:draggable-widget={isDraggable}
+  class:draggable-widget={$settingStore.options.isDraggable}
   use:draggable={draggableOptions}
   use:resizable={resizableOptions}
   style="

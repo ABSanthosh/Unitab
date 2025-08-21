@@ -1,13 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { draggable } from "../../../actions/draggable";
-  import { resizable } from "../../../actions/resizable";
+  import { draggable } from "../../../actions/draggable.svelte";
+  import { resizable } from "../../../actions/resizable.svelte";
   import {
     getTimeForCity,
     getTimezoneOffset,
     getCityAbbreviation,
     type SupportedCityName,
   } from "../../../utils/timezone";
+  import settingStore from "../../../../lib/stores/settingStore";
   import type { AnalogClockSpan } from "../../../stores/settingStore";
 
   let time = $state(new Date());
@@ -19,8 +20,6 @@
       col: number;
     };
     span: AnalogClockSpan;
-    isDraggable?: boolean;
-    isResizable?: boolean;
     settings: {
       showNumbers: boolean;
       city?: SupportedCityName;
@@ -34,16 +33,7 @@
   // Show numbers
   // Show seconds hand
 
-  let {
-    id,
-    pos,
-    span,
-    onResize,
-    settings,
-    onDragEnd,
-    isResizable,
-    isDraggable,
-  }: Props = $props();
+  let { id, pos, span, onResize, settings, onDragEnd }: Props = $props();
 
   // Current position and size state
   let currentGridRow = $state(pos.row);
@@ -53,13 +43,11 @@
 
   // Draggable options
   const draggableOptions = {
-    disabled: !isDraggable,
     onDragEnd: handleDragEnd,
   };
 
   // Resizable options
   const resizableOptions = {
-    disabled: !isResizable,
     allowedSizes: ["1x1", "2x2"],
     onResize: handleResize,
   };
@@ -117,7 +105,8 @@
   {id}
   use:draggable={draggableOptions}
   use:resizable={resizableOptions}
-  class="AnalogClock BlurBG draggable-widget"
+  class="AnalogClock BlurBG"
+  class:draggable-widget={$settingStore.options.isDraggable}
   style="grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow +
     currentSpanY} / {currentGridCol + currentSpanX};"
   data-size={widgetSize}

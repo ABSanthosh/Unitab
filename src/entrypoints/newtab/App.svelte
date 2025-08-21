@@ -13,7 +13,6 @@
     document.body.style.backgroundImage = `url(${value.options.wallpaper.url})`;
   });
 
-  let settingStoreValue = $derived($settingStore);
   let showModal = $state(false);
 </script>
 
@@ -24,22 +23,59 @@
       onClick: () => (showModal = true),
       displayText: "Settings",
     },
+    {
+      name: "showGrid",
+      onClick: () => {
+        settingStore.update((store) => {
+          store.options.showGrid = !store.options.showGrid;
+          return store;
+        });
+      },
+      displayText: $settingStore.options.showGrid ? "Hide Grid" : "Show Grid",
+    },
+    {
+      name: "Resize Widgets",
+      onClick: () => {
+        settingStore.update((store) => {
+          store.options.isResizable = !store.options.isResizable;
+          return store;
+        });
+      },
+      displayText: $settingStore.options.isResizable
+        ? "Disable Resize"
+        : "Enable Resize",
+    },
+    {
+      name: "Drag Widgets",
+      onClick: () => {
+        settingStore.update((store) => {
+          store.options.isDraggable = !store.options.isDraggable;
+          return store;
+        });
+      },
+      displayText: $settingStore.options.isDraggable
+        ? "Disable Drag"
+        : "Enable Drag",
+    },
   ]}
 />
 
 <WidgetModal bind:showModal />
 
-<WidgetGrid gridGap={10} gridPadding={40} showGrid={false} minWidgetSize={120}>
-  {#each Object.keys(settingStoreValue.widgets) as widgetId}
-    {@const widget = settingStoreValue.widgets[widgetId]}
+<WidgetGrid
+  gridGap={10}
+  gridPadding={40}
+  minWidgetSize={110}
+  showGrid={$settingStore.options.showGrid}
+>
+  {#each Object.keys($settingStore.widgets) as widgetId}
+    {@const widget = $settingStore.widgets[widgetId]}
     {#if widget.type === "analog-clock"}
       <AnalogClock
         id={widget.id}
         pos={widget.pos}
         span={widget.span}
         settings={widget.settings}
-        isDraggable={settingStoreValue.options.isDraggable}
-        isResizable={settingStoreValue.options.isResizable}
         onDragEnd={(newRow, newCol) => {
           settingStore.update((store) => {
             store.widgets[widgetId].pos = { row: newRow, col: newCol };
@@ -59,8 +95,6 @@
         pos={widget.pos}
         span={widget.span}
         settings={widget.settings}
-        isDraggable={settingStoreValue.options.isDraggable}
-        isResizable={settingStoreValue.options.isResizable}
         onDragEnd={(newRow, newCol) => {
           settingStore.update((store) => {
             store.widgets[widgetId].pos = { row: newRow, col: newCol };
@@ -80,8 +114,6 @@
         pos={widget.pos}
         span={widget.span}
         settings={widget.settings}
-        isDraggable={settingStoreValue.options.isDraggable}
-        isResizable={settingStoreValue.options.isResizable}
         onDragEnd={(newRow, newCol) => {
           settingStore.update((store) => {
             store.widgets[widgetId].pos = { row: newRow, col: newCol };
@@ -101,8 +133,6 @@
         pos={widget.pos}
         span={widget.span}
         settings={widget.settings}
-        isDraggable={settingStoreValue.options.isDraggable}
-        isResizable={settingStoreValue.options.isResizable}
         onDragEnd={(newRow, newCol) => {
           settingStore.update((store) => {
             store.widgets[widgetId].pos = { row: newRow, col: newCol };

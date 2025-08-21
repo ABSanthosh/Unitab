@@ -85,18 +85,20 @@ interface SettingStore {
     string,
     AnalogClockWidget | FlipClockWidget | CalendarWidget | CatWidget
   >;
-  wallpapers: string[];
+  wallpapers: {
+    presets: string[]; // Array of preset wallpaper URLs
+  };
 }
 
 const defaultStore: SettingStore = {
   options: {
+    showGrid: true,
     isDraggable: true,
     isResizable: true,
     wallpaper: {
       type: "preset",
       url: "/assets/wallpapers/adwaita-d.jpg",
     },
-    showGrid: true,
   },
   widgets: {
     "analog-clock-1": {
@@ -134,12 +136,6 @@ const defaultStore: SettingStore = {
     },
   },
   wallpapers: {
-    nasa: {
-      apiKey: "DEMO_KEY", 
-      types: {
-        "apod": {}
-      }
-    },
     presets: [
       "/assets/wallpapers/adwaita-d.jpg",
       "/assets/wallpapers/adwaita-l.jpg",

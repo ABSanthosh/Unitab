@@ -1,12 +1,11 @@
-<svelte:options runes={true} />
-
 <script lang="ts">
   import { onMount } from "svelte";
-  import { draggable } from "../../actions/draggable";
-  import { resizable } from "../../actions/resizable";
+  import { draggable } from "../../actions/draggable.svelte";
+  import { resizable } from "../../actions/resizable.svelte";
   import { ChevronLeft, ChevronRight, RotateCcw } from "@lucide/svelte";
   import { getTimeForCity, type SupportedCityName } from "../../utils/timezone";
   import type { CalendarSpan } from "../../stores/settingStore";
+  import settingStore from "../../../lib/stores/settingStore";
 
   interface Props {
     id: string;
@@ -15,8 +14,6 @@
       col: number;
     };
     span: CalendarSpan;
-    isDraggable?: boolean;
-    isResizable?: boolean;
     settings: {
       city?: SupportedCityName;
     };
@@ -28,8 +25,6 @@
     id,
     pos = { row: 1, col: 1 },
     span = { x: 2, y: 2 },
-    isDraggable,
-    isResizable,
     settings,
     onDragEnd = (newRow: number, newCol: number) => {},
     onResize = (newSpan: CalendarSpan) => {},
@@ -58,14 +53,12 @@
   });
 
   // Draggable options
-  const draggableOptions = {
-    disabled: !isDraggable,
+  let draggableOptions = $derived({
     onDragEnd: handleDragEnd,
-  };
+  });
 
   // Resizable options
-  const resizableOptions = {
-    disabled: !isResizable,
+  let resizableOptions = $derived({
     allowedSizes: ["1x1", "2x2"],
     onResize: handleResize,
     onResizeStart: () => {
@@ -81,7 +74,7 @@
         isResizing = false;
       }, 100);
     },
-  };
+  });
 
   // Handle drag end to update position
   function handleDragEnd(newRow: number, newCol: number) {
@@ -268,11 +261,13 @@
 
 <div
   {id}
+  class="calendar-widget"
   use:draggable={draggableOptions}
   use:resizable={resizableOptions}
-  class="calendar-widget draggable-widget"
   class:compact={shouldShowCompact}
-  style="grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow + currentSpanY} / {currentGridCol + currentSpanX}; --rowCount: {rowCount};"
+  class:draggable-widget={$settingStore.options.isDraggable}
+  style="grid-area: {currentGridRow} / {currentGridCol} / {currentGridRow +
+    currentSpanY} / {currentGridCol + currentSpanX}; --rowCount: {rowCount};"
 >
   <div class="calendar-container">
     {#if shouldShowCompact}
@@ -292,7 +287,9 @@
       <!-- Full 2x2 layout -->
       <!-- Month Header -->
       <div class="month-header">
-        <h2 class="month-name">{localeData().shortMonthNames[currentMonth]}. {currentYear}</h2>
+        <h2 class="month-name">
+          {localeData().shortMonthNames[currentMonth]}. {currentYear}
+        </h2>
         <div class="month-controls">
           <button class="prev-month" on:click={prevMonth}>
             <ChevronLeft size="16" />
@@ -342,12 +339,12 @@
     // Ensure the widget fills the grid cell properly
     width: 100%;
     height: 100%;
-    min-height: 240px; // Minimum height for 2x2 calendar
+    // min-height: 240px; // Minimum height for 2x2 calendar
 
     // Force proper sizing during resize transitions
-    &.compact {
-      min-height: 120px; // Smaller minimum height for 1x1
-    }
+    // &.compact {
+    //   min-height: 120px; // Smaller minimum height for 1x1
+    // }
 
     & > * {
       user-select: none;
@@ -443,7 +440,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 500;
     color: #374151;
     border-radius: 4px;
@@ -528,16 +525,14 @@
   // Responsive adjustments based on widget size
   .calendar-widget {
     // For 2x2 grid (default) - smaller, tighter spacing
+    .calendar-day,
+    .day-header {
+      font-size: 14px;
+    }
+
     .month-name {
       font-size: 16px;
-    }
-
-    .day-header {
-      font-size: 9px;
-    }
-
-    .calendar-day {
-      font-size: 10px;
+      font-weight: 600;
     }
   }
 
@@ -572,11 +567,11 @@
     // 4x4+ width
     .calendar-container {
       padding: 16px;
-      gap: 10px;
+      gap: 5px;
     }
 
     .month-name {
-      font-size: 22px;
+      font-size: 18px;
     }
 
     .day-header {
@@ -584,7 +579,7 @@
     }
 
     .calendar-day {
-      font-size: 16px;
+      font-size: 14px;
       border-radius: 8px;
     }
 

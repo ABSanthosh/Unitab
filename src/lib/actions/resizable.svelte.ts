@@ -1,26 +1,32 @@
+import settingStore from "../stores/settingStore";
+
 export interface ResizableOptions {
   onResize?: (spanX: number, spanY: number) => void;
   onResizeStart?: () => void;
   onResizeEnd?: () => void;
   allowedSizes?: string[]; // e.g., ["1x1", "2x2", "3x3"]
-  disabled?: boolean;
 }
 
 export function resizable(
   element: HTMLElement,
   options: ResizableOptions = {}
 ) {
-  let isResizing = false;
-  let startX = 0;
-  let startY = 0;
-  let initialSpanX = 1;
-  let initialSpanY = 1;
-  let resizeIndicator: HTMLElement | null = null;
-  let currentSpanX = 1;
-  let currentSpanY = 1;
-  let resizeTimeout: number | null = null;
-  let lastResizeTime = 0;
-  let isTransitioning = false;
+  let isResizing = $state(false);
+  let isResizable = $state(false);
+  let startX = $state(0);
+  let startY = $state(0);
+  let initialSpanX = $state(1);
+  let initialSpanY = $state(1);
+  let resizeIndicator: HTMLElement | null = $state(null);
+  let currentSpanX = $state(1);
+  let currentSpanY = $state(1);
+  let resizeTimeout: number | null = $state(null);
+  let lastResizeTime = $state(0);
+  let isTransitioning = $state(false);
+
+  settingStore.subscribe((value) => {
+    isResizable = !value.options.isResizable;
+  });
 
   function getGridContainer(): HTMLElement | null {
     return element.closest(".widget-container") as HTMLElement;
@@ -109,7 +115,7 @@ export function resizable(
 
     // Use a faster, more responsive transition for real-time resizing
     const transitionDuration = isResizing ? "150ms" : "250ms";
-    // element.style.transition = `width ${transitionDuration} cubic-bezier(0.25, 0.1, 0.25, 1), height ${transitionDuration} cubic-bezier(0.25, 0.1, 0.25, 1)`;
+    // element.style.transition = `width ${transitionDuration} cubic-bezier(.17,.57,.41,.87), height ${transitionDuration} cubic-bezier(.17,.57,.41,.87)`;
 
     // Update grid area immediately (but dimensions will animate)
     element.style.gridArea = `${position.row} / ${position.col} / ${
@@ -342,21 +348,6 @@ export function resizable(
     indicator.className = "resize-indicator";
 
     // Create the bean-like shape using the provided SVG
-    // <svg
-    //   width="18"
-    //   height="18"
-    //   viewBox="0 0 18 18"
-    //   fill="none"
-    //   xmlns="http://www.w3.org/2000/svg"
-    // >
-    //   <path
-    //     d="M15 3C15 9.5 9.5 15 3 15"
-    //     stroke="antiquewhite"
-    //     stroke-width="6"
-    //     stroke-linecap="round"
-    //   />
-    //   </svg>
-
     indicator.innerHTML = `
       <svg
         width="19"
@@ -381,8 +372,8 @@ export function resizable(
       height: 19px;
       opacity: 0;
       z-index: 10;
-      position: absolute;
       cursor: nw-resize;
+      position: absolute;
       pointer-events: all;
       transition: opacity 0.2s ease, transform 0.2s ease;
     `;
@@ -391,7 +382,7 @@ export function resizable(
   }
 
   function showIndicator() {
-    if (!resizeIndicator || options.disabled || isResizing) return;
+    if (!resizeIndicator || isResizable || isResizing) return;
     // Small delay to ensure smooth transition
     requestAnimationFrame(() => {
       if (resizeIndicator) {
@@ -406,7 +397,7 @@ export function resizable(
   }
 
   function handleMouseDown(e: MouseEvent) {
-    if (options.disabled || e.button !== 0) return; // Left click only
+    if (isResizable || e.button !== 0) return; // Left click only
 
     e.preventDefault();
     e.stopPropagation();
@@ -435,8 +426,7 @@ export function resizable(
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-    document.body.style.userSelect = "none";
-    document.body.style.cursor = "nw-resize";
+    document.body.classList.add("resizing");
   }
 
   function handleMouseMove(e: MouseEvent) {
@@ -503,8 +493,7 @@ export function resizable(
 
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
-    document.body.style.userSelect = "";
-    document.body.style.cursor = "";
+    document.body.classList.remove("resizing");
 
     // Call the callback with the new size
     if (
@@ -521,7 +510,7 @@ export function resizable(
   }
 
   // Initialize
-  if (!options.disabled) {
+  if (!isResizable) {
     element.style.position = "relative";
 
     resizeIndicator = createResizeIndicator();
@@ -535,10 +524,10 @@ export function resizable(
 
   return {
     update(newOptions: ResizableOptions) {
-      const wasDisabled = options.disabled;
+      const wasDisabled = isResizable;
       options = newOptions;
 
-      if (options.disabled && !wasDisabled) {
+      if (isResizable && !wasDisabled) {
         // Disable resize
         if (resizeIndicator) {
           resizeIndicator.remove();
@@ -546,7 +535,7 @@ export function resizable(
         }
         element.removeEventListener("mouseenter", showIndicator);
         element.removeEventListener("mouseleave", hideIndicator);
-      } else if (!options.disabled && wasDisabled) {
+      } else if (!isResizable && wasDisabled) {
         // Enable resize
         element.style.position = "relative";
         resizeIndicator = createResizeIndicator();

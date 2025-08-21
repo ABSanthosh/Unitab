@@ -1,8 +1,8 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { draggable, type DraggableOptions } from "../../actions/draggable";
-  import { resizable, type ResizableOptions } from "../../actions/resizable";
+  import { draggable, type DraggableOptions } from "../../actions/draggable.svelte";
+  import { resizable, type ResizableOptions } from "../../actions/resizable.svelte";
 
   interface Props {
     gridRow?: number;

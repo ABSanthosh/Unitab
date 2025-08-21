@@ -68,7 +68,7 @@
   <section class="Appearance__preset">
     <h3 class="Appearance__subheader">Preset Wallpapers</h3>
     <div class="Appearance__preset--content">
-      {#each $settingStore.wallpapers as src}
+      {#each $settingStore.wallpapers.presets as src}
         <button
           aria-label="Select wallpaper"
           class="Appearance__preview"

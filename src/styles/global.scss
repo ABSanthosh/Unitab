@@ -70,9 +70,9 @@ body {
 
 .BlurBG {
   border-radius: 20px;
-  backdrop-filter: blur(15px);
   background: rgba(0, 0, 0, 0.49);
   box-shadow: 0 0 20px 1px #00000087;
+  backdrop-filter: blur(26px) saturate(170%) brightness(1.04);
 }
 
 // Drag and drop styles
@@ -92,17 +92,8 @@ body {
 // Smooth transitions for draggable elements
 .draggable-widget {
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
   &:hover {
-    cursor: grab;
-
-    .resize-indicator {
-      opacity: 0.7 !important;
-    }
-  }
-
-  &:active {
-    cursor: grabbing;
+    cursor: grab !important;
   }
 }
 
@@ -117,12 +108,12 @@ body.dragging {
   // SVG bean-shaped resize indicator
   svg {
     transition: all 0.2s ease;
-    
+
     ellipse {
       transition: fill 0.2s ease;
     }
   }
-  
+
   &:hover {
     transform: scale(1.1) !important;
 
