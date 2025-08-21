@@ -25,7 +25,12 @@ export function resizable(
   let isTransitioning = $state(false);
 
   settingStore.subscribe((value) => {
-    isResizable = !value.options.isResizable;
+    const newResizable = value.options.isResizable;
+    const wasResizable = isResizable;
+    isResizable = newResizable;
+    
+    // Update indicator visibility and cursor based on new state
+    updateResizableState(wasResizable, newResizable);
   });
 
   function getGridContainer(): HTMLElement | null {
@@ -382,7 +387,7 @@ export function resizable(
   }
 
   function showIndicator() {
-    if (!resizeIndicator || isResizable || isResizing) return;
+    if (!resizeIndicator || !isResizable || isResizing) return;
     // Small delay to ensure smooth transition
     requestAnimationFrame(() => {
       if (resizeIndicator) {
@@ -392,12 +397,12 @@ export function resizable(
   }
 
   function hideIndicator() {
-    if (!resizeIndicator || isResizing) return;
+    if (!resizeIndicator || !isResizable || isResizing) return;
     resizeIndicator.style.opacity = "0";
   }
 
   function handleMouseDown(e: MouseEvent) {
-    if (isResizable || e.button !== 0) return; // Left click only
+    if (!isResizable || e.button !== 0) return; // Left click only
 
     e.preventDefault();
     e.stopPropagation();
@@ -509,8 +514,30 @@ export function resizable(
     }
   }
 
+  function updateResizableState(wasResizable: boolean, newResizable: boolean) {
+    if (newResizable && !wasResizable) {
+      // Enable resize - show indicator and set cursor
+      if (!resizeIndicator) {
+        element.style.position = "relative";
+        resizeIndicator = createResizeIndicator();
+        element.appendChild(resizeIndicator);
+        element.addEventListener("mouseenter", showIndicator);
+        element.addEventListener("mouseleave", hideIndicator);
+        resizeIndicator.addEventListener("mousedown", handleMouseDown);
+      }
+    } else if (!newResizable && wasResizable) {
+      // Disable resize - remove indicator and reset cursor
+      if (resizeIndicator) {
+        resizeIndicator.remove();
+        resizeIndicator = null;
+      }
+      element.removeEventListener("mouseenter", showIndicator);
+      element.removeEventListener("mouseleave", hideIndicator);
+    }
+  }
+
   // Initialize
-  if (!isResizable) {
+  if (isResizable) {
     element.style.position = "relative";
 
     resizeIndicator = createResizeIndicator();
@@ -524,26 +551,9 @@ export function resizable(
 
   return {
     update(newOptions: ResizableOptions) {
-      const wasDisabled = isResizable;
       options = newOptions;
-
-      if (isResizable && !wasDisabled) {
-        // Disable resize
-        if (resizeIndicator) {
-          resizeIndicator.remove();
-          resizeIndicator = null;
-        }
-        element.removeEventListener("mouseenter", showIndicator);
-        element.removeEventListener("mouseleave", hideIndicator);
-      } else if (!isResizable && wasDisabled) {
-        // Enable resize
-        element.style.position = "relative";
-        resizeIndicator = createResizeIndicator();
-        element.appendChild(resizeIndicator);
-        element.addEventListener("mouseenter", showIndicator);
-        element.addEventListener("mouseleave", hideIndicator);
-        resizeIndicator.addEventListener("mousedown", handleMouseDown);
-      }
+      // Note: The resizable state is managed by the settingStore subscription
+      // so we don't need to handle state changes here anymore
     },
 
     destroy() {
