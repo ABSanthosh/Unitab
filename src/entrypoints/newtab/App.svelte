@@ -8,12 +8,22 @@
   import Cat from "../../lib/components/widgets/Cat.svelte";
   import ContextMenu from "@/lib/components/ContextMenu.svelte";
   import WidgetModal from "@/lib/components/WidgetModal/WidgetModal.svelte";
+  import { initializeWallpaperManager, cleanupWallpaperManager } from "../../lib/managers/wallpaperManager";
+  import { onMount, onDestroy } from "svelte";
 
   settingStore.subscribe((value) => {
     document.body.style.backgroundImage = `url(${value.options.wallpaper.url})`;
   });
 
   let showModal = $state(false);
+
+  onMount(() => {
+    initializeWallpaperManager();
+  });
+
+  onDestroy(() => {
+    cleanupWallpaperManager();
+  });
 </script>
 
 <ContextMenu

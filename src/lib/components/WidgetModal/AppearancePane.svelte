@@ -1,7 +1,51 @@
 <script lang="ts">
   import settingStore from "../../stores/settingStore";
-
+  import { fetchTodaysAPOD } from "../../utils/NASA/APOD";
   import NasaLogo from "../../assets/nasa.png";
+
+  let isApplying = $state(false);
+  let apodError = $state("");
+  let apiKeyInput = $state(
+    $settingStore.options.wallpaper.type === "nasa"
+      ? $settingStore.options.wallpaper.apiKey
+      : ""
+  );
+
+  // Function to apply NASA APOD wallpaper
+  async function applyNasaWallpaper() {
+    if (!apiKeyInput.trim()) {
+      apodError = "Please enter a NASA API key";
+      return;
+    }
+
+    isApplying = true;
+    apodError = "";
+
+    try {
+      const result = await fetchTodaysAPOD(apiKeyInput.trim());
+      
+      // Only apply images, skip videos
+      if (result.media_type === "image") {
+        settingStore.update((store) => {
+          store.options.wallpaper = {
+            type: "nasa",
+            category: "apod",
+            apiKey: apiKeyInput.trim(),
+            url: result.hdurl || result.url, // Prefer HD version if available
+          };
+          return store;
+        });
+        apodError = "";
+      } else {
+        apodError = "Today's APOD is a video. Only images are supported for wallpapers.";
+      }
+    } catch (error) {
+      console.error("Failed to fetch APOD:", error);
+      apodError = "Failed to fetch APOD. Please check your API key.";
+    } finally {
+      isApplying = false;
+    }
+  }
 </script>
 
 <div class="Appearance">
@@ -15,50 +59,40 @@
         <div class="Nasa__header--text">
           <h4>NASA Dynamic Wallpapers</h4>
           <p>
-            There are a handful of stunning NASA images updated regularly that
-            you can use as dynamic wallpapers.
+            Get stunning NASA Astronomy Pictures of the Day as your wallpaper.
+            <a href="https://api.nasa.gov/" target="_blank" rel="noopener noreferrer">
+              Get your free API key here
+            </a>.
           </p>
           <label for="nasa-api-key">
             <p>
               NASA API Key <em> (required) </em>
             </p>
 
-            <div>
+            <div class="Nasa__input-group">
               <input
                 id="nasa-api-key"
                 class="CrispInput"
                 type="text"
-                placeholder="DEMO_KEY"
-                value={$settingStore.options.wallpaper.type === "nasa"
-                  ? $settingStore.options.wallpaper.apiKey
-                  : "DEMO_KEY"}
-                onchange={(e) => {
-                  const apiKey = (e.target as HTMLInputElement).value;
-                  settingStore.update((store) => {
-                    if (store.options.wallpaper.type === "nasa") {
-                      store.options.wallpaper.apiKey = apiKey;
-                    }
-                    return store;
-                  });
-                }}
+                placeholder="Enter your NASA API key"
+                bind:value={apiKeyInput}
               />
-              <!-- <button
+              <button
                 class="CrispButton"
-                onclick={() => {
-                  settingStore.update((store) => {
-                    store.options.wallpaper = {
-                      type: "nasa",
-                      apiKey: $settingStore.options.wallpaper.apiKey,
-                      category: "apod",
-                      url: "",
-                    };
-                    return store;
-                  });
-                }}
+                onclick={applyNasaWallpaper}
+                disabled={isApplying || !apiKeyInput.trim()}
               >
-                Save
-              </button> -->
+                {isApplying ? "Applying..." : "Apply"}
+              </button>
             </div>
+            
+            {#if apodError}
+              <p class="error">{apodError}</p>
+            {/if}
+            
+            <p class="info">
+              Don't have a NASA API key? <a href="https://api.nasa.gov/" target="_blank">Get one free here</a>
+            </p>
           </label>
         </div>
       </div>
@@ -186,6 +220,28 @@
           font-size: 18px;
           margin: 0;
           color: #404040;
+
+          a {
+            color: #338cec;
+            text-decoration: none;
+            font-weight: 500;
+
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+        }
+
+        .error {
+          color: #dc2626;
+          font-size: 14px;
+          margin-top: 4px;
+        }
+
+        .info {
+          color: #6b7280;
+          font-size: 14px;
+          margin-top: 8px;
         }
 
         label {
@@ -198,12 +254,23 @@
           & > p {
             font-size: 16px;
           }
-
-          input {
-            margin-top: 4px;
-            @include box(100%, 35px);
-          }
         }
+      }
+    }
+
+    &__input-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+
+      input {
+        flex: 1;
+        @include box(auto, 35px);
+      }
+
+      button {
+        @include box(auto, 35px);
+        padding: 0 12px;
       }
     }
   }
