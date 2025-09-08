@@ -1,5 +1,7 @@
 @use "./mixins" as *;
 @forward "./global.scss";
+@forward "./Crisp/theme.scss";
 
-@forward "./CrispInput.scss";
-@forward "./CrispButton.scss";
+@forward "./Crisp/CrispInput.scss";
+@forward "./Crisp/CrispButton.scss";
+@forward "./Crisp/CrispMessage.scss";

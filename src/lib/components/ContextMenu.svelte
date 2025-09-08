@@ -2,11 +2,20 @@
   let {
     menuItems,
   }: {
-    menuItems: {
-      name: string;
-      onClick: () => void;
-      displayText: string;
-    }[];
+    menuItems: (
+      | {
+          name: string;
+          onClick: () => void;
+          displayText: string;
+        }
+      | {
+          name: "hr";
+        }
+      | {
+          name: "label";
+          displayText: string;
+        }
+    )[];
   } = $props();
 
   let pos = $state({ x: 600, y: 300 });
@@ -59,17 +68,23 @@
       {#each menuItems as item}
         {#if item.name === "hr"}
           <hr class="context-menu__separator" />
+        {:else if item.name === "label"}
+          <li class="context-menu__item context-menu__item--disabled">
+            <span class="context-menu__button">{item.displayText}</span>
+          </li>
         {:else}
           <li class="context-menu__item">
             <button
               class="context-menu__button"
               onclick={() => {
-                item.onClick();
-                showMenu = false;
+                if ("onClick" in item) {
+                  item.onClick();
+                  showMenu = false;
+                }
               }}
               type="button"
             >
-              {item.displayText}
+              {"displayText" in item ? item.displayText : ""}
             </button>
           </li>
         {/if}
@@ -146,9 +161,10 @@
 
     &__separator {
       border: 0;
-      height: 1px;
-      margin: 6px 0;
-      border: 0.5px solid rgba(255, 255, 255, 0.18);
+      // height: 0.1px;
+      width: 90%;
+      margin: 6px auto;
+      border: 0.2px solid rgba(255, 255, 255, 0.13);
     }
 
     &__button-content {

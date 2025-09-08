@@ -1,15 +1,6 @@
-@use "./mixins" as *;
+@use "../mixins" as *;
 
 .CrispInput {
-  --t-crp-disabled-color: light-dark(#a3a3a3, #eaeaea);
-  --t-crp-background-hover: light-dark(#eaecee, #2f3337);
-  --t-crp-disabled-background-color: light-dark(#eaecee, #2f3337);
-  --t-crp-link-primary: light-dark(#7547ff, #b49bff);
-  --t-crp-border: light-dark(#d0d7de, #343536);
-  --t-crp-light-border: light-dark(#e8edf1, #2f2e2e);
-  --t-crp-border-hover: light-dark(#ccced1, #8b949e);
-  --t-crp-disabled-border: light-dark(#eaecee, #2f3337);
-
   --crp-input-border: 1px solid var(--t-crp-border);
   --crp-input-border-hover: 1px solid var(--t-crp-border-hover);
   --crp-input-background-hover: var(--t-crp-background-hover);

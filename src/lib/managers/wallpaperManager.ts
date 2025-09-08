@@ -1,4 +1,9 @@
-import { fetchTodaysAPOD, type APODResponse } from "../utils/NASA/APOD";
+import {
+  fetchAPODByDate,
+  fetchRandomAPODs,
+  fetchTodaysAPOD,
+  type APODResponse,
+} from "../utils/NasaWallpaper";
 import settingStore from "../stores/settingStore";
 import { get } from "svelte/store";
 
@@ -6,46 +11,125 @@ import { get } from "svelte/store";
  * Wallpaper manager to handle different wallpaper types
  */
 export class WallpaperManager {
-  /**
-   * Updates NASA APOD wallpaper if currently selected
-   */
-  static async updateNASAWallpaper(): Promise<boolean> {
+  static async refreshNASAWallpaper(): Promise<boolean> {
+    // if its a dynamic wallpaper, get a random wallpaper and replace just the url and metadata
     const currentSettings = get(settingStore);
-    
+
     if (currentSettings.options.wallpaper.type !== "nasa") {
       return false;
     }
 
+    const wallpaper = currentSettings.options.wallpaper;
+
     try {
-      const apodData = await fetchTodaysAPOD(currentSettings.options.wallpaper.apiKey);
-      
-      // Only update if it's an image
-      if (apodData.media_type === "image") {
-        settingStore.update((store) => {
-          if (store.options.wallpaper.type === "nasa") {
-            store.options.wallpaper.url = apodData.hdurl || apodData.url;
-          }
-          return store;
-        });
-        return true;
-      }
+      let apodData: APODResponse;
+
+      apodData = (
+        await fetchRandomAPODs(currentSettings.wallpapers.nasaAPIKey!, 1)
+      )[0];
+
+      settingStore.update((store) => {
+        if (store.options.wallpaper.type === "nasa") {
+          store.options.wallpaper = {
+            type: "nasa",
+            url: apodData.hdurl || apodData.url,
+            metadata: {
+              mode: wallpaper.metadata.mode,
+              category: "apod",
+              lastUpdate:
+                wallpaper.metadata.mode === "dynamic"
+                  ? wallpaper.metadata.lastUpdate!
+                  : apodData.date,
+              ...apodData,
+            },
+          };
+        }
+        return store;
+      });
+      return true;
     } catch (error) {
-      console.error("Failed to update NASA wallpaper:", error);
+      console.error("Failed to refresh NASA wallpaper:", error);
     }
 
     return false;
   }
 
   /**
-   * Sets up periodic updates for NASA wallpapers
-   * @param intervalHours - How often to check for updates (default: 6 hours)
+   * Updates NASA APOD wallpaper based on frequency setting
    */
-  static setupAutoUpdate(intervalHours: number = 6): NodeJS.Timeout {
-    const intervalMs = intervalHours * 60 * 60 * 1000;
-    
-    return setInterval(async () => {
-      await this.updateNASAWallpaper();
-    }, intervalMs);
+  static async updateNASAWallpaper(): Promise<boolean> {
+    const currentSettings = get(settingStore);
+
+    if (currentSettings.options.wallpaper.type !== "nasa") {
+      return false;
+    }
+
+    const wallpaper = currentSettings.options.wallpaper;
+
+    try {
+      let apodData: APODResponse;
+
+      // Daily mode - check if we need to update
+      const today = new Date().toISOString().split("T")[0];
+
+      if (wallpaper.metadata.lastUpdate === today) {
+        // Already updated today, no need to fetch
+        return false;
+      }
+
+      if (currentSettings.options.wallpaper.metadata.mode === "static") {
+        apodData = await fetchAPODByDate(
+          currentSettings.wallpapers.nasaAPIKey!,
+          wallpaper.metadata.lastUpdate!
+        );
+
+        settingStore.update((store) => {
+          if (store.options.wallpaper.type === "nasa") {
+            store.options.wallpaper = {
+              type: "nasa",
+              url: apodData.hdurl || apodData.url,
+              metadata: {
+                mode: "static",
+                category: "apod",
+                lastUpdate: wallpaper.metadata.lastUpdate!,
+                ...apodData,
+              },
+            };
+          }
+          return store;
+        });
+        return true;
+      } else {
+        // Fetch today's APOD
+        apodData = await fetchTodaysAPOD(
+          currentSettings.wallpapers.nasaAPIKey!
+        );
+
+        // Only update if it's an image
+        if (apodData.media_type === "image") {
+          settingStore.update((store) => {
+            if (store.options.wallpaper.type === "nasa") {
+              store.options.wallpaper = {
+                type: "nasa",
+                url: apodData.hdurl || apodData.url,
+                metadata: {
+                  mode: "dynamic",
+                  category: "apod",
+                  lastUpdate: new Date().toISOString().split("T")[0],
+                  ...apodData,
+                },
+              };
+            }
+            return store;
+          });
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to update NASA wallpaper:", error);
+    }
+
+    return false;
   }
 
   /**
@@ -65,28 +149,56 @@ export class WallpaperManager {
   }
 }
 
-// Initialize auto-update when module loads
-let autoUpdateInterval: NodeJS.Timeout | null = null;
-
 // Set up auto-update for NASA wallpapers
-export function initializeWallpaperManager() {
-  // Update immediately if NASA wallpaper is selected
+export function initializeWallpaper() {
+  // Update immediately if NASA wallpaper is selected and it's either:
+  // 1. Daily mode (check if needs update)
+  // 2. Every-refresh mode (always update on page load)
   const currentSettings = get(settingStore);
   if (currentSettings.options.wallpaper.type === "nasa") {
     WallpaperManager.updateNASAWallpaper();
   }
-
-  // Set up periodic updates
-  if (autoUpdateInterval) {
-    clearInterval(autoUpdateInterval);
-  }
-  autoUpdateInterval = WallpaperManager.setupAutoUpdate(6); // Update every 6 hours
 }
 
-// Clean up on module unload
-export function cleanupWallpaperManager() {
-  if (autoUpdateInterval) {
-    clearInterval(autoUpdateInterval);
-    autoUpdateInterval = null;
+export function setDynamicWallpaper(
+  mode: "dynamic" | "static",
+  staticDate?: string
+) {
+  const currentSettings = get(settingStore);
+  // if (currentSettings.options.wallpaper.type !== "nasa") {
+  //   return;
+  // }
+
+  if (mode === "dynamic") {
+    settingStore.update((store) => {
+      store.options.wallpaper.type = "nasa";
+      store.options.wallpaper.metadata.mode = "dynamic";
+      delete store.options.wallpaper.metadata.lastUpdate;
+      return store;
+    });
+    WallpaperManager.updateNASAWallpaper();
+  } else if (mode === "static") {
+    const date = new Date(staticDate!).toISOString().split("T")[0];
+    if (date) {
+      fetchAPODByDate(currentSettings.wallpapers.nasaAPIKey!, date).then(
+        (apodData) => {
+          if (apodData.media_type === "image") {
+            settingStore.update((store) => {
+              store.options.wallpaper = {
+                type: "nasa",
+                url: apodData.hdurl || apodData.url,
+                metadata: {
+                  mode: "static",
+                  category: "apod",
+                  lastUpdate: date,
+                  ...apodData,
+                },
+              };
+              return store;
+            });
+          }
+        }
+      );
+    }
   }
 }

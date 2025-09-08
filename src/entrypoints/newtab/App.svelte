@@ -2,28 +2,47 @@
   import settingStore from "../../lib/stores/settingStore";
   import WidgetGrid from "../../lib/components/WidgetGrid.svelte";
   import Calendar from "../../lib/components/widgets/Calendar.svelte";
-  import TestWidget from "../../lib/components/widgets/TestWidget.svelte";
   import FlipClock from "../../lib/components/widgets/clock/FlipClock.svelte";
   import AnalogClock from "@/lib/components/widgets/clock/AnalogClock.svelte";
   import Cat from "../../lib/components/widgets/Cat.svelte";
   import ContextMenu from "@/lib/components/ContextMenu.svelte";
   import WidgetModal from "@/lib/components/WidgetModal/WidgetModal.svelte";
-  import { initializeWallpaperManager, cleanupWallpaperManager } from "../../lib/managers/wallpaperManager";
-  import { onMount, onDestroy } from "svelte";
+  import {
+    initializeWallpaper,
+    WallpaperManager,
+  } from "../../lib/managers/wallpaperManager";
+  import { onMount } from "svelte";
+  import Modal from "@/lib/components/Modal.svelte";
 
   settingStore.subscribe((value) => {
     document.body.style.backgroundImage = `url(${value.options.wallpaper.url})`;
   });
 
   let showModal = $state(false);
+  let showNASAWallpaperInfo = $state(false);
 
   onMount(() => {
-    initializeWallpaperManager();
+    initializeWallpaper();
   });
 
-  onDestroy(() => {
-    cleanupWallpaperManager();
-  });
+  const NasaContextMenu = $derived(
+    $settingStore.options.wallpaper.type === "nasa"
+      ? [
+          {
+            name: "hr",
+            displayText: "",
+            onClick: () => {},
+          },
+          {
+            name: "Refresh Wallpaper",
+            displayText: "Refresh Wallpaper",
+            onClick: () => {
+              WallpaperManager.refreshNASAWallpaper();
+            },
+          },
+        ]
+      : []
+  );
 </script>
 
 <ContextMenu
@@ -67,6 +86,7 @@
         ? "Disable Drag"
         : "Enable Drag",
     },
+    ...NasaContextMenu,
   ]}
 />
 
@@ -159,3 +179,27 @@
     {/if}
   {/each}
 </WidgetGrid>
+
+{#if $settingStore.options.wallpaper.type === "nasa"}
+  <button
+    class="WallpaperDetailsButton BlurBG"
+    onclick={() => (showNASAWallpaperInfo = true)}
+  >
+    ?
+  </button>
+
+  <Modal
+    heading={$settingStore.options.wallpaper.metadata.title}
+    bind:showModal={showNASAWallpaperInfo}
+  >
+    <div class="WallpaperDetails">
+      <p>{$settingStore.options.wallpaper.metadata.explanation}</p>
+      {#if $settingStore.options.wallpaper.metadata.copyright}
+        <p>© {$settingStore.options.wallpaper.metadata.copyright}</p>
+      {/if}
+      <a href={$settingStore.options.wallpaper.metadata.url} target="_blank">
+        View full image
+      </a>
+    </div>
+  </Modal>
+{/if}

@@ -352,23 +352,21 @@ export function resizable(
     const indicator = document.createElement("div");
     indicator.className = "resize-indicator";
 
-    // Create the bean-like shape using the provided SVG
-    indicator.innerHTML = `
-      <svg
-        width="19"
-        height="19"
-        viewBox="0 0 23 23"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M3 20C14.3626 20 19.6777 14.3333 20 3"
-          stroke="#D6D6D6"
-          stroke-width="6"
-          stroke-linecap="round"
-        />
-      </svg>
-    `;
+    // Create the SVG elements using DOM methods
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "19");
+    svg.setAttribute("height", "19");
+    svg.setAttribute("viewBox", "0 0 23 23");
+    svg.setAttribute("fill", "none");
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M3 20C14.3626 20 19.6777 14.3333 20 3");
+    path.setAttribute("stroke", "#D6D6D6");
+    path.setAttribute("stroke-width", "6");
+    path.setAttribute("stroke-linecap", "round");
+
+    svg.appendChild(path);
+    indicator.appendChild(svg);
 
     indicator.style.cssText = `
       bottom: 5px;

@@ -4,6 +4,7 @@ export interface APODResponse {
   explanation: string;
   hdurl?: string;
   media_type: "image" | "video";
+  thumbnail_url?: string;
   service_version: string;
   title: string;
   url: string;
@@ -25,7 +26,10 @@ const APOD_BASE_URL = "https://api.nasa.gov/planetary/apod";
  * @param options - Optional parameters for the APOD request
  * @returns Promise<APODResponse | APODResponse[]> - Single APOD or array of APODs
  */
-export async function fetchAPOD(apiKey: string, options: APODOptions = {}): Promise<APODResponse | APODResponse[]> {
+export async function fetchAPOD(
+  apiKey: string,
+  options: APODOptions = {}
+): Promise<APODResponse | APODResponse[]> {
   try {
     const url = new URL(APOD_BASE_URL);
     url.searchParams.append("api_key", apiKey);
@@ -50,10 +54,15 @@ export async function fetchAPOD(apiKey: string, options: APODOptions = {}): Prom
     const response = await fetch(url.toString());
 
     if (!response.ok) {
-      throw new Error(`NASA APOD API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `NASA APOD API error: ${response.status} ${response.statusText}`
+      );
     }
 
-    const data = await response.json();
+    const data: APODResponse = await response.json();
+    if (data.media_type === "video" && data.thumbnail_url) {
+      data.url = data.thumbnail_url;
+    }
     return data;
   } catch (error) {
     console.error("Error fetching NASA APOD:", error);
@@ -77,7 +86,10 @@ export async function fetchTodaysAPOD(apiKey: string): Promise<APODResponse> {
  * @param date - Date in YYYY-MM-DD format
  * @returns Promise<APODResponse> - APOD for the specified date
  */
-export async function fetchAPODByDate(apiKey: string, date: string): Promise<APODResponse> {
+export async function fetchAPODByDate(
+  apiKey: string,
+  date: string
+): Promise<APODResponse> {
   const result = await fetchAPOD(apiKey, { date });
   return result as APODResponse;
 }
@@ -88,7 +100,10 @@ export async function fetchAPODByDate(apiKey: string, date: string): Promise<APO
  * @param count - Number of random entries to fetch
  * @returns Promise<APODResponse[]> - Array of random APODs
  */
-export async function fetchRandomAPODs(apiKey: string, count: number): Promise<APODResponse[]> {
+export async function fetchRandomAPODs(
+  apiKey: string,
+  count: number
+): Promise<APODResponse[]> {
   const result = await fetchAPOD(apiKey, { count });
   return result as APODResponse[];
 }
@@ -100,7 +115,39 @@ export async function fetchRandomAPODs(apiKey: string, count: number): Promise<A
  * @param endDate - End date in YYYY-MM-DD format
  * @returns Promise<APODResponse[]> - Array of APODs in the date range
  */
-export async function fetchAPODRange(apiKey: string, startDate: string, endDate: string): Promise<APODResponse[]> {
-  const result = await fetchAPOD(apiKey, { start_date: startDate, end_date: endDate });
+export async function fetchAPODRange(
+  apiKey: string,
+  startDate: string,
+  endDate: string
+): Promise<APODResponse[]> {
+  const result = await fetchAPOD(apiKey, {
+    start_date: startDate,
+    end_date: endDate,
+  });
   return result as APODResponse[];
+}
+
+/**
+ * Fetches a random APOD from the past
+ * @param apiKey - NASA API key
+ * @returns Promise<APODResponse> - Random APOD from the past
+ */
+export async function fetchRandomPastAPOD(
+  apiKey: string
+): Promise<APODResponse> {
+  // APOD started on June 16, 1995
+  const startDate = new Date("1995-06-16");
+  const endDate = new Date();
+
+  // Generate a random date between start and end
+  const randomTime =
+    startDate.getTime() +
+    Math.random() * (endDate.getTime() - startDate.getTime());
+  const randomDate = new Date(randomTime);
+
+  // Format as YYYY-MM-DD
+  const dateString = randomDate.toISOString().split("T")[0];
+
+  const result = await fetchAPOD(apiKey, { date: dateString });
+  return result as APODResponse;
 }

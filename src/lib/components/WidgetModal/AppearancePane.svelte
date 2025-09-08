@@ -1,51 +1,22 @@
 <script lang="ts">
+  import { setDynamicWallpaper } from "@/lib/managers/wallpaperManager";
   import settingStore from "../../stores/settingStore";
-  import { fetchTodaysAPOD } from "../../utils/NASA/APOD";
-  import NasaLogo from "../../assets/nasa.png";
+  import { fetchTodaysAPOD } from "../../utils/NasaWallpaper";
+  import NasaLogo from "~/assets/nasa.png";
 
-  let isApplying = $state(false);
-  let apodError = $state("");
-  let apiKeyInput = $state(
-    $settingStore.options.wallpaper.type === "nasa"
-      ? $settingStore.options.wallpaper.apiKey
-      : ""
+  let apiKeyState = $state<"empty" | "valid" | "invalid">(
+    $settingStore.wallpapers.nasaAPIKey &&
+      $settingStore.wallpapers.nasaAPIKey !== "DEMO_KEY"
+      ? "valid"
+      : "empty"
   );
-
-  // Function to apply NASA APOD wallpaper
-  async function applyNasaWallpaper() {
-    if (!apiKeyInput.trim()) {
-      apodError = "Please enter a NASA API key";
-      return;
-    }
-
-    isApplying = true;
-    apodError = "";
-
-    try {
-      const result = await fetchTodaysAPOD(apiKeyInput.trim());
-      
-      // Only apply images, skip videos
-      if (result.media_type === "image") {
-        settingStore.update((store) => {
-          store.options.wallpaper = {
-            type: "nasa",
-            category: "apod",
-            apiKey: apiKeyInput.trim(),
-            url: result.hdurl || result.url, // Prefer HD version if available
-          };
-          return store;
-        });
-        apodError = "";
-      } else {
-        apodError = "Today's APOD is a video. Only images are supported for wallpapers.";
-      }
-    } catch (error) {
-      console.error("Failed to fetch APOD:", error);
-      apodError = "Failed to fetch APOD. Please check your API key.";
-    } finally {
-      isApplying = false;
-    }
-  }
+  let apodError = $state("");
+  let apiKeyInput = $state($settingStore.wallpapers.nasaAPIKey || "");
+  let staticDate = $state(
+    $settingStore.options.wallpaper.metadata.mode === "static"
+      ? $settingStore.options.wallpaper.metadata.lastUpdate
+      : new Date().toISOString().split("T")[0]
+  );
 </script>
 
 <div class="Appearance">
@@ -56,45 +27,109 @@
     <div class="Nasa">
       <div class="Nasa__header">
         <img src={NasaLogo} alt="NASA Logo" />
-        <div class="Nasa__header--text">
-          <h4>NASA Dynamic Wallpapers</h4>
-          <p>
-            Get stunning NASA Astronomy Pictures of the Day as your wallpaper.
-            <a href="https://api.nasa.gov/" target="_blank" rel="noopener noreferrer">
-              Get your free API key here
-            </a>.
-          </p>
+        <div class="Nasa__header--right">
+          <h4>NASA Wallpapers</h4>
           <label for="nasa-api-key">
-            <p>
-              NASA API Key <em> (required) </em>
-            </p>
+            <input
+              id="nasa-api-key"
+              class="CrispInput"
+              type="text"
+              placeholder="Enter your NASA API key"
+              bind:value={apiKeyInput}
+            />
+            <button
+              class="CrispButton"
+              onclick={async () => {
+                try {
+                  const validityTestResult = await fetchTodaysAPOD(apiKeyInput);
+                  if (validityTestResult.media_type === "image") {
+                    apiKeyState = "valid";
+                    apodError = "";
+                    // Save to settings
+                    settingStore.update((store) => {
+                      store.wallpapers.nasaAPIKey = apiKeyInput.trim();
+                      return store;
+                    });
+                  } else {
+                    apiKeyState = "invalid";
+                    apodError =
+                      "The API key is invalid or has no image access.";
+                  }
+                } catch (error) {
+                  apiKeyState = "invalid";
+                  apodError =
+                    "The API key is invalid or there was a network error.";
+                }
+              }}
+              disabled={!apiKeyInput.trim() || apiKeyState === "valid"}
+            >
+              {apiKeyState === "valid" ? "Valid API Key" : "Check"}
+            </button>
+          </label>
 
-            <div class="Nasa__input-group">
-              <input
-                id="nasa-api-key"
-                class="CrispInput"
-                type="text"
-                placeholder="Enter your NASA API key"
-                bind:value={apiKeyInput}
-              />
-              <button
-                class="CrispButton"
-                onclick={applyNasaWallpaper}
-                disabled={isApplying || !apiKeyInput.trim()}
-              >
-                {isApplying ? "Applying..." : "Apply"}
-              </button>
-            </div>
-            
-            {#if apodError}
-              <p class="error">{apodError}</p>
-            {/if}
-            
-            <p class="info">
-              Don't have a NASA API key? <a href="https://api.nasa.gov/" target="_blank">Get one free here</a>
-            </p>
+          {#if apodError}
+            <i class="CrispMessage" data-type="error" data-format="box">
+              {apodError}
+            </i>
+          {/if}
+        </div>
+      </div>
+
+      <div class="Nasa__items">
+        <!-- 2 types: Dynamic and Static -->
+        <!-- Dynamic will not have any options. You can only select -->
+        <!-- static has a date picker -->
+
+        <div class="Nasa__item">
+          <input
+            type="radio"
+            id="nasa-dynamic"
+            name="nasa-wallpaper-type"
+            value="dynamic"
+            checked={$settingStore.options.wallpaper.type === "nasa" &&
+              $settingStore.options.wallpaper.metadata.mode === "dynamic"}
+            onchange={() => {
+              setDynamicWallpaper("dynamic");
+            }}
+          />
+          <label for="nasa-dynamic">Dynamic (Daily Update)</label>
+        </div>
+
+        <div class="Nasa__item">
+          <input
+            type="radio"
+            id="nasa-static"
+            name="nasa-wallpaper-type"
+            value="static"
+            checked={$settingStore.options.wallpaper.type === "nasa" &&
+              $settingStore.options.wallpaper.metadata.mode === "static"}
+            onchange={() => {
+              setDynamicWallpaper("static", staticDate);
+            }}
+          />
+
+          <label for="nasa-static"
+            >Static
+            <input
+              type="date"
+              id="nasa-static-date"
+              name="nasa-static-date"
+              bind:value={staticDate}
+              min="2020-01-01"
+              max={new Date().toISOString().split("T")[0]}
+              onchange={() => {
+                setDynamicWallpaper("static", staticDate);
+              }}
+            />
           </label>
         </div>
+
+        <p class="Nasa__apiHelp">
+          Don't have a NASA API key? <a
+            href="https://api.nasa.gov/"
+            target="_blank">Get one free here</a
+          >
+        </p>
       </div>
     </div>
   </section>
@@ -110,7 +145,11 @@
           style={`background-image: url(${src})`}
           onclick={() => {
             settingStore.update((store) => {
-              store.options.wallpaper = { type: "preset", url: src };
+              store.options.wallpaper = {
+                type: "preset",
+                url: src,
+                metadata: {},
+              };
               return store;
             });
           }}
@@ -189,47 +228,33 @@
   }
 
   .Nasa {
+    gap: 10px;
     width: 100%;
     padding: 13px;
-    border-radius: 8px;
     color: #202020;
+    border-radius: 8px;
     background-color: #f4f4f4;
+    @include box($height: auto, $width: 100%);
+    @include make-flex($dir: column, $align: flex-start, $just: flex-start);
 
     &__header {
-      display: flex;
-      align-items: flex-start;
       gap: 10px;
+      @include box($height: auto, $width: 100%);
+      @include make-flex($dir: row, $align: flex-start, $just: flex-start);
 
       img {
         width: 60px;
         height: 60px;
       }
 
-      &--text {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+      &--right {
+        gap: 7px;
+        width: 100%;
+        @include make-flex($dir: column, $align: flex-start, $just: flex-start);
 
         h4 {
           font-size: 20px;
-          margin: 0;
           color: #202020;
-        }
-
-        p {
-          font-size: 18px;
-          margin: 0;
-          color: #404040;
-
-          a {
-            color: #338cec;
-            text-decoration: none;
-            font-weight: 500;
-
-            &:hover {
-              text-decoration: underline;
-            }
-          }
         }
 
         .error {
@@ -245,11 +270,10 @@
         }
 
         label {
-          color: #202020;
-          margin-top: 8px;
-          display: flex;
-          flex-direction: column;
           gap: 4px;
+          width: 100%;
+          color: #202020;
+          @include make-flex($dir: row, $align: flex-start, $just: flex-start);
 
           & > p {
             font-size: 16px;
@@ -257,20 +281,18 @@
         }
       }
     }
+    &__apiHelp {
+      font-size: 14px;
+      color: #404040;
 
-    &__input-group {
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
+      a {
+        color: #338cec;
+        font-weight: 500;
+        text-decoration: none;
 
-      input {
-        flex: 1;
-        @include box(auto, 35px);
-      }
-
-      button {
-        @include box(auto, 35px);
-        padding: 0 12px;
+        &:hover {
+          text-decoration: underline;
+        }
       }
     }
   }

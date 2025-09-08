@@ -57,7 +57,17 @@ body {
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
-  transition: background-image 0.3s ease-in-out;
+  transition: background-image 0.3s opacityAnimation;
+}
+
+@keyframes opacityAnimation {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+  
 }
 
 // global needs
@@ -157,4 +167,43 @@ body.resizing {
       background: rgba(59, 130, 246, 0.05) !important;
     }
   }
+}
+
+.WallpaperDetails {
+  gap: 8px;
+  color: white;
+  font-size: 14px;
+  border-radius: 10px 10px 0 0;
+  @include make-flex($dir: column, $align: flex-start);
+
+  a {
+    color: #ccc;
+    text-decoration: underline;
+    font-size: 13px;
+    margin-left: auto;
+  }
+  a:hover {
+    color: white;
+    text-decoration: underline;
+  }
+  p {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+}
+
+.WallpaperDetailsButton {
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 5px;
+  @include box(30px, 30px);
+  @include make-flex();
+  border: 1px solid #ffffff55;
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
 }

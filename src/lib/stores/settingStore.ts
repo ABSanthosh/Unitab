@@ -1,6 +1,7 @@
 import { writable } from "svelte/store";
 import { SupportedCityName } from "../utils/timezone";
 import { catStoreActions } from "./catStore";
+import { APODResponse } from "../utils/NasaWallpaper";
 
 type Widget = {
   id: string;
@@ -66,12 +67,16 @@ type WallpaperTypes =
   | {
       type: "preset";
       url: string;
+      metadata: Record<string, any>;
     }
   | {
       type: "nasa";
-      category: "apod" | "earth" | "mars" | "moon";
-      apiKey: string;
       url: string;
+      metadata: {
+        mode: "dynamic" | "static";
+        category: "apod" | "earth" | "mars" | "moon";
+        lastUpdate?: string; // ISO date string for dynamic and static modes
+      } & APODResponse;
     };
 
 interface SettingStore {
@@ -86,6 +91,7 @@ interface SettingStore {
     AnalogClockWidget | FlipClockWidget | CalendarWidget | CatWidget
   >;
   wallpapers: {
+    nasaAPIKey?: string; // Store NASA API key if user sets it
     presets: string[]; // Array of preset wallpaper URLs
   };
 }
@@ -98,6 +104,7 @@ const defaultStore: SettingStore = {
     wallpaper: {
       type: "preset",
       url: "/assets/wallpapers/adwaita-d.jpg",
+      metadata: {},
     },
   },
   widgets: {
@@ -136,6 +143,7 @@ const defaultStore: SettingStore = {
     },
   },
   wallpapers: {
+    nasaAPIKey: "DEMO_KEY",
     presets: [
       "/assets/wallpapers/adwaita-d.jpg",
       "/assets/wallpapers/adwaita-l.jpg",
