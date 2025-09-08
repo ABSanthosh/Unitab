@@ -76,10 +76,6 @@
       </div>
 
       <div class="Nasa__items">
-        <!-- 2 types: Dynamic and Static -->
-        <!-- Dynamic will not have any options. You can only select -->
-        <!-- static has a date picker -->
-
         <div class="Nasa__item">
           <input
             type="radio"
@@ -88,14 +84,12 @@
             value="dynamic"
             checked={$settingStore.options.wallpaper.type === "nasa" &&
               $settingStore.options.wallpaper.metadata.mode === "dynamic"}
-            onchange={() => {
-              setDynamicWallpaper("dynamic");
-            }}
+            onchange={() => setDynamicWallpaper("dynamic")}
           />
           <label for="nasa-dynamic">Dynamic (Daily Update)</label>
         </div>
 
-        <div class="Nasa__item">
+        <div class="Nasa__item" style="padding: 7px 7px 7px 18px;">
           <input
             type="radio"
             id="nasa-static"
@@ -103,13 +97,11 @@
             value="static"
             checked={$settingStore.options.wallpaper.type === "nasa" &&
               $settingStore.options.wallpaper.metadata.mode === "static"}
-            onchange={() => {
-              setDynamicWallpaper("static", staticDate);
-            }}
+            onchange={() => setDynamicWallpaper("static", staticDate)}
           />
 
-          <label for="nasa-static"
-            >Static
+          <label for="nasa-static">
+            Static
             <input
               type="date"
               id="nasa-static-date"
@@ -117,9 +109,9 @@
               bind:value={staticDate}
               min="2020-01-01"
               max={new Date().toISOString().split("T")[0]}
-              onchange={() => {
-                setDynamicWallpaper("static", staticDate);
-              }}
+              disabled={!($settingStore.options.wallpaper.type === "nasa" &&
+                $settingStore.options.wallpaper.metadata.mode === "static")}
+              onchange={() => setDynamicWallpaper("static", staticDate)}
             />
           </label>
         </div>
@@ -292,6 +284,86 @@
 
         &:hover {
           text-decoration: underline;
+        }
+      }
+    }
+
+    &__items {
+      gap: 12px;
+      width: 100%;
+      margin-top: 8px;
+      @include make-flex($dir: column, $align: flex-start, $just: flex-start);
+    }
+
+    &__item {
+      gap: 12px;
+      width: 100%;
+      padding: 13px 18px;
+      border-radius: 10px;
+      background-color: #fafafa;
+      border: 2px solid #e5e5e5;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      @include make-flex($dir: row, $align: center, $just: flex-start);
+
+      &:hover {
+        background-color: #f0f8ff;
+        border-color: #338cec;
+        box-shadow: 0 2px 8px rgba(51, 140, 236, 0.1);
+      }
+
+      &:has(input:checked) {
+        background-color: #e6f3ff;
+        border-color: #338cec;
+        box-shadow: 0 2px 12px rgba(51, 140, 236, 0.15);
+      }
+
+      input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        cursor: pointer;
+        accent-color: #338cec;
+        flex-shrink: 0;
+      }
+
+      label {
+        flex: 1;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        color: #2a2a2a;
+        margin: 0;
+        @include make-flex($dir: row, $align: center, $just: space-between);
+
+        input[type="date"] {
+          padding: 6px 10px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 14px;
+          background-color: white;
+          color: #374151;
+          cursor: pointer;
+          transition: border-color 0.2s ease;
+          margin-left: 12px;
+
+          &:focus {
+            outline: none;
+            border-color: #338cec;
+            box-shadow: 0 0 0 3px rgba(51, 140, 236, 0.1);
+          }
+
+          &:hover:not(:disabled) {
+            border-color: #9ca3af;
+          }
+
+          &:disabled {
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            cursor: not-allowed;
+            border-color: #e5e7eb;
+          }
         }
       }
     }
